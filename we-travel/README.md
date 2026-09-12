@@ -10,12 +10,6 @@ my-app/
 │   ├── pages/
 │   │   ├── ForgotPassword.jsx
 │   │   └── AccountSettings.jsx
-│   ├── services/
-│   │   └── authService.js
-│   ├── utils/
-│   │   └── validation.js
-│   ├── firebase/
-│   │   └── config.js
 │   └── App.jsx
 ├── .gitignore
 ├── package.json
