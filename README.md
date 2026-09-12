@@ -1,2 +1,16 @@
-# CPSC-491-03-Group-3-
-All code work for Senior CapStone Project
+# We Travel Structure
+
+Okay so my branch should look like the following tree.
+
+my-app/
+├── src/
+│   ├── components/
+│   │   ├── Button.jsx
+│   │   └── FormMessage.jsx
+│   ├── pages/
+│   │   ├── ForgotPassword.jsx
+│   │   └── AccountSettings.jsx
+│   └── App.jsx
+├── .gitignore
+├── package.json
+└── README.md
