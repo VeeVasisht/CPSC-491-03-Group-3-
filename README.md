@@ -17,7 +17,7 @@ app/
 │   │   ├── config.js
 │   │   ├── root.tsx
 │   │   ├── routes.ts
-│   │   └── valadation.js
+│   │   └── validation.js
 ├── components/
 │   ├── Button.jsx
 │   └── FormMessage.jsx
