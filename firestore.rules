@@ -3,55 +3,90 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    match /users/{uid} {
+    /*
+     * Authentication helpers
+     */
 
-      // Request must come from the signed-in owner of this document.
-      // The document id (uid) is the identity — we don't store uid in the doc.
-      function isOwner() {
-        return request.auth != null
-          && request.auth.uid == uid;
-      }
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-      // Validate the full resulting profile document.
-      function validProfile(data) {
-        return
-          // Required fields present (bio is optional, so not required here).
-          data.keys().hasAll(['displayName', 'createdAt', 'updatedAt'])
+    function isOwner(userId) {
+      return isSignedIn()
+        && request.auth.uid == userId;
+    }
 
-          // No unexpected fields allowed — anything not listed is rejected.
-          && data.keys().hasOnly(['displayName', 'bio', 'createdAt', 'updatedAt'])
 
-          // Type checks.
-          && data.displayName is string
-          && data.get('bio', '') is string
-          && data.createdAt is timestamp
-          && data.updatedAt is timestamp
+    /*
+     * User profiles
+     *   Path: /users/{uid}
+     *   Fields: displayName, bio, createdAt, updatedAt
+     *   (uid is the document id — not stored in the doc)
+     */
 
-          // Length limits — same contract the UI enforces (defense in depth).
-          && data.displayName.size() >= 2
-          && data.displayName.size() <= 50
-          && data.get('bio', '').size() <= 160;
-      }
+    match /users/{userId} {
 
-      // Create your own profile; timestamps must be the real server time.
-      allow create: if isOwner()
-        && validProfile(request.resource.data)
+      // Read only your own profile.
+      allow read: if isOwner(userId);
+
+      // Create your own profile: exactly the 4 expected fields, valid
+      // lengths, and server timestamps.
+      allow create: if
+        isOwner(userId)
+
+        && request.resource.data.keys().hasAll([
+          'displayName', 'bio', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'displayName', 'bio', 'createdAt', 'updatedAt'
+        ])
+
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 2
+        && request.resource.data.displayName.size() <= 50
+
+        && request.resource.data.bio is string
+        && request.resource.data.bio.size() <= 160
+
+        && request.resource.data.createdAt is timestamp
         && request.resource.data.createdAt == request.time
+
+        && request.resource.data.updatedAt is timestamp
         && request.resource.data.updatedAt == request.time;
 
-      // Read your own profile only.
-      allow read: if isOwner();
+      // Update only displayName, bio, updatedAt. createdAt is immutable.
+      allow update: if
+        isOwner(userId)
 
-      // Update your own profile: only displayName, bio, updatedAt may change,
-      // and updatedAt must be refreshed to server time.
-      allow update: if isOwner()
-        && validProfile(request.resource.data)
+        && request.resource.data.keys().hasOnly([
+          'displayName', 'bio', 'createdAt', 'updatedAt'
+        ])
         && request.resource.data.diff(resource.data)
-             .affectedKeys()
-             .hasOnly(['displayName', 'bio', 'updatedAt'])
+          .affectedKeys()
+          .hasOnly(['displayName', 'bio', 'updatedAt'])
+
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 2
+        && request.resource.data.displayName.size() <= 50
+
+        && request.resource.data.bio is string
+        && request.resource.data.bio.size() <= 160
+
+        && request.resource.data.createdAt == resource.data.createdAt
+
+        && request.resource.data.updatedAt is timestamp
         && request.resource.data.updatedAt == request.time;
 
-      // No delete rule → client deletes are denied by default.
+      // Client-side deletion disabled.
+      allow delete: if false;
+    }
+
+
+    /*
+     * Default deny — any path not explicitly allowed above is blocked.
+     */
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
