@@ -4,13 +4,15 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "dev": "react-router dev",
+    "dev": "react-router dev --mode emulator",
+    "dev:firebase": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
     "test": "vitest"
   },
   "dependencies": {
-    "@firebase-oss/ui-react": "^7.1.0",
+    "@firebase-oss/ui-react": "^7.0.3",
+    "@firebase-oss/ui-styles": "^7.1.0",
     "@react-router/node": "^8",
     "@react-router/serve": "^8",
     "firebase": "^12.19.0",
