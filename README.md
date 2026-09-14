@@ -3,6 +3,11 @@
 After commits the main branch should look like the following tree.
 
 app/
+│   ├── firebase
+│   │   ├── auth.integration.test.ts
+│   │   ├── auth.test.ts
+│   │   ├── auth.ts
+│   │   └──firebase.ts
 │   ├── models/
 │   │   │   ├── userProfile.test.ts
 │   │   │   └── userProfile.ts
@@ -17,7 +22,7 @@ app/
 │   │   ├── config.js
 │   │   ├── root.tsx
 │   │   ├── routes.ts
-│   │   └── validation.js
+│   │   └── validation.ts
 ├── components/
 │   ├── Button.jsx
 │   └── FormMessage.jsx
@@ -27,9 +32,14 @@ app/
 ├── public/
 │   └── favicon.ico
 ├── .dockerignore
+├── .firebaserc
 ├── .gitignore
 ├── Dockerfile
 ├── README.md
+├── firebase.json
+├── firestore-debug.log
+├── firestore.indexes.json
+├── firestore.rules
 ├── package-lock.json
 ├── package.json
 ├── react-router.config.js

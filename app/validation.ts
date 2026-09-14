@@ -11,12 +11,12 @@ mainted and that the correct type of data is used as input.
  * @returns {{ valid: boolean, error?: string}}
  */
 
-export function validateEmail(email: unkown) : { valid: boolean; error?: string } {
+export function validateEmail(email: unknown) : { valid: boolean; error?: string } {
   if (!email || typeof email != 'string') {
     return { valid: false, error: 'Email is required.' };
   }
 
-  const trimmmed = email.trim();
+  const trimmed = email.trim();
   const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   if (!emailPattern.test(trimmed)) {
