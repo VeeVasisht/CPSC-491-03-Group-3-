@@ -19,7 +19,7 @@ export default function Button({
         <button
             type = {type}
             disabled = {disabled || loading}
-            className = {'${baseStyles} ${variants[variant] || variants.primary}'}
+            className = {`${baseStyles} ${variants[variant] || variants.primary}`}
         >
             {loading ? "Processing..." : children}
         </button>

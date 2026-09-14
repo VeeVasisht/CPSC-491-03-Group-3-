@@ -3,26 +3,33 @@
 After commits the main branch should look like the following tree.
 
 app/
-│   ├── firebase
+│   ├── components/
+│   │   ├── LoginForm.tsx
+│   │   ├── LogoutButton.tsx
+│   ├── firebase/
 │   │   ├── auth.integration.test.ts
 │   │   ├── auth.test.ts
 │   │   ├── auth.ts
-│   │   └──firebase.ts
+│   │   ├── firebase.ts
+│   │   └── loginLogout.test.ts
 │   ├── models/
-│   │   │   ├── userProfile.test.ts
-│   │   │   └── userProfile.ts
+│   │   ├── login.test.ts
+│   │   ├── login.ts
+│   │   ├── userProfile.test.ts
+│   │   └── userProfile.ts
 │   ├── routes/
-│   │   │   └── home.tsx
+│   │   ├── home.tsx
+│   │   └── login.tsx
 │   └── welcome
-│   │   │   ├── logo-dark.svg
-│   │   │   ├── logo-light.svg
-│   │   │   └── welcome.tsx
-│   │   ├── app.css
-│   │   ├── authService.js
-│   │   ├── config.js
-│   │   ├── root.tsx
-│   │   ├── routes.ts
-│   │   └── validation.ts
+│   │   ├── logo-dark.svg
+│   │   ├── logo-light.svg
+│   │   └── welcome.tsx
+│   ├── app.css
+│   ├── authService.js
+│   ├── config.js
+│   ├── root.tsx
+│   ├── routes.ts
+│   └── validation.ts
 ├── components/
 │   ├── Button.jsx
 │   └── FormMessage.jsx
