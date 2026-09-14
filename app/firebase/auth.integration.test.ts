@@ -8,7 +8,7 @@ import {
   connectFirestoreEmulator,
   doc,
   getDoc,
-} from "firebase/firestore/lite";
+} from "firebase/firestore";
 
 import { auth, db } from "./firebase";
 import { createAccount } from "./auth";

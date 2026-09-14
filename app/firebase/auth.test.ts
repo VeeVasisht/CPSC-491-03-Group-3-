@@ -27,7 +27,7 @@ vi.mock("firebase/auth", () => ({
   deleteUser: mocks.deleteUser,
 }));
 
-vi.mock("firebase/firestore/lite", () => ({
+vi.mock("firebase/firestore", () => ({
   doc: mocks.doc,
   setDoc: mocks.setDoc,
   serverTimestamp: mocks.serverTimestamp,
