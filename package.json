@@ -10,7 +10,6 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@firebase-oss/ui-react": "^7.1.0",
     "@react-router/node": "^8",
     "@react-router/serve": "^8",
     "firebase": "^12.19.0",
