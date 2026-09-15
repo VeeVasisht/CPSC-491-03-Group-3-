@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "./css/registration.css";
-@import "@firebase-oss/ui-styles/dist.min.css";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
