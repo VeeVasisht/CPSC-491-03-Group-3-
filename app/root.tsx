@@ -1,3 +1,7 @@
+import { FirebaseUIProvider } from "@firebase-oss/ui-react";
+
+import { firebaseUI } from "./firebase/firebaseUI";
+
 import {
   isRouteErrorResponse,
   Links,
@@ -60,8 +64,11 @@ export function Layout({
 
 export default function App() {
   return (
+    
     <AuthSessionProvider>
-      <Outlet />
+       <FirebaseUIProvider ui={firebaseUI}>
+        <Outlet />
+      </FirebaseUIProvider>
     </AuthSessionProvider>
   );
 }

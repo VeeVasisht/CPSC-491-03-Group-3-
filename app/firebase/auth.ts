@@ -1,4 +1,4 @@
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import {
   createUserWithEmailAndPassword,
@@ -8,7 +8,7 @@ import {
   deleteUser,
 } from "firebase/auth";
 
-import type { UserCredential } from "firebase/auth";
+import type { User, UserCredential } from "firebase/auth";
 
 /**
  * Creates a Firebase Auth account and the matching Firestore user profile.
@@ -73,4 +73,21 @@ export async function signOut(): Promise<void> {
  */
 export async function resetPassword(email: string): Promise<void> {
   await sendPasswordResetEmail(auth, email.trim());
+}
+
+
+export async function ensureUserProfile(user: User): Promise<void> {
+    const userRef = doc(db, "users", user.uid);
+    const snapshot = await getDoc(userRef);
+
+    if (snapshot.exists()) {
+        return;
+    }
+
+    await setDoc(userRef, {
+        displayName: user.displayName?.trim() || "User",
+        bio: "",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    });
 }
