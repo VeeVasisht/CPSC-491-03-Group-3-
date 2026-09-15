@@ -15,7 +15,7 @@ const firebaseConfig = {
   storageBucket: "wetravel-569a0.firebasestorage.app",
   messagingSenderId: "992264324404",
   appId: "1:992264324404:web:ae3cef2cdb7e519d68d161",
-  measurementId: "G-YNJPZ4B478"
+  measurementId: "G-YNJPZ4B478",
 };
 
 // Initialize Firebase
@@ -23,9 +23,17 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export {app, auth, db};
+export { app, auth, db };
 
 if (import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true") {
+  try {
     connectAuthEmulator(auth, "http://127.0.0.1:9099");
+  } catch (error) {
+    console.error("Error connecting to auth emulator: ", error);
+  }
+  try {
     connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  } catch (error) {
+    console.error("Error connecting to firestore emulator: ", error);
+  }
 }
