@@ -6,3 +6,4 @@
 /.react-router/
 /build/
 firestore-debug.log
+firebase-debug.log

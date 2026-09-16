@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ForgotPassword from "./ForgotPassword";
-import * as authModule from "../app/firebase/auth";
+import * as authModule from "../firebase/auth";
 
 vi.mock("../app/firebase/auth", () => ({
   resetPassword: vi.fn(),
