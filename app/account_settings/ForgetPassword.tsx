@@ -1,21 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router";
 
-import { resetPassword } from "../app/firebase/auth";
+import { resetPassword } from "../firebase/auth";
 import {
   validateForgetPasswordEmail,
   getResetPasswordErrorMessage
-} from "../app/models/forgetPassword";
+} from "../models/forgetPassword";
 
 
-export default function ForgotPassword() {
+export function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [fieldError, setFieldError] = useState("");
   const [formError, setFormError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  async function handleSubmit(event) {
+  async function handleSubmit(event: { preventDefault: () => void; }) {
     event.preventDefault();
     setFieldError("");
     setFormError("");
