@@ -9,5 +9,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function AccountSettingsPage() {
-  return ( <AccountSettings/> );
+  return <AccountSettings/>;
 }

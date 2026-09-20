@@ -3,8 +3,8 @@ import { ForgotPassword }  from "~/account_settings/ForgetPassword";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Account Settings | WeTravel" },
-    { name: "description", content: "Manage account settings." },
+    { title: "Forget Password | WeTravel" },
+    { name: "description", content: "Reset Your Password" },
   ];
 }
 
