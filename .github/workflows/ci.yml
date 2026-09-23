@@ -26,7 +26,7 @@ jobs:
         run: npm run typecheck
         continue-on-error: true
       - name: Run unit tests
-        run: npx vitest run app/models app/services app/firebase/auth.test.ts
+        run: npx vitest run
 
   integration:
     name: Firebase Integration (WIP — Reign + Robert, emulator pending)
