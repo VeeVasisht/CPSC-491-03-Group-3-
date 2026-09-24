@@ -49,6 +49,7 @@ export function LocationPicker({
     event.preventDefault();
 
     if (
+      name.trim() === "" ||
       latitude.trim() === "" ||
       longitude.trim() === ""
     ) {
@@ -59,27 +60,26 @@ export function LocationPicker({
     }
 
     const location: Geotag = {
-      name,
+      name: name.trim(),
       latitude: Number(latitude),
       longitude: Number(longitude),
     };
 
-    const validation =
-      validateGeotag(location);
+    const validation = validateGeotag(location);
 
     if (!validation.valid) {
-      setError(
-        "Enter a valid location and coordinates.",
-      );
+      const validationError =
+        validation.errors.name ??
+        validation.errors.latitude ??
+        validation.errors.longitude ??
+        "Enter a valid location and coordinates.";
+
+      setError(validationError);
       return;
     }
 
     setError(null);
-
-    onChange({
-      ...location,
-      name: location.name.trim(),
-    });
+    onChange(location);
   }
 
   function handleClear() {
@@ -87,7 +87,6 @@ export function LocationPicker({
     setLatitude("");
     setLongitude("");
     setError(null);
-
     onChange(null);
   }
 
