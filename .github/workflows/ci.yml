@@ -27,17 +27,3 @@ jobs:
         continue-on-error: true
       - name: Run unit tests
         run: npx vitest run
-
-  integration:
-    name: Firebase Integration (WIP — Reign + Robert, emulator pending)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Run integration tests
-        run: npx vitest run app/firebase/auth.integration.test.ts
