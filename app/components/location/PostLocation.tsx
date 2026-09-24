@@ -7,13 +7,13 @@ interface PostLocationProps {
 export function PostLocation({
   location,
 }: PostLocationProps) {
-  if (!location) {
+  if (!location || !location.name.trim()) {
     return null;
   }
 
   return (
     <p className="text-sm text-gray-600 dark:text-gray-300">
-      📍 {location.name}
+      📍 {location.name.trim()}
     </p>
   );
 }
