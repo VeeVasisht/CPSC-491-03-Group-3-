@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -26,12 +27,22 @@ export function SavePostButton({
   const [error, setError] =
     useState<string | null>(null);
 
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     let active = true;
 
     async function loadSavedState() {
       if (!user) {
-        if (active) {
+        if (active && isMounted.current) {
           setSaved(false);
           setLoading(false);
         }
@@ -45,17 +56,17 @@ export function SavePostButton({
           postId,
         );
 
-        if (active) {
+        if (active && isMounted.current) {
           setSaved(result);
         }
       } catch {
-        if (active) {
+        if (active && isMounted.current) {
           setError(
             "Unable to check saved post.",
           );
         }
       } finally {
-        if (active) {
+        if (active && isMounted.current) {
           setLoading(false);
         }
       }
@@ -86,23 +97,31 @@ export function SavePostButton({
           postId,
         );
 
-        setSaved(false);
+        if (isMounted.current) {
+          setSaved(false);
+        }
       } else {
         await savePost(
           user.uid,
           postId,
         );
 
-        setSaved(true);
+        if (isMounted.current) {
+          setSaved(true);
+        }
       }
     } catch {
-      setError(
-        saved
-          ? "Unable to remove saved post."
-          : "Unable to save post.",
-      );
+      if (isMounted.current) {
+        setError(
+          saved
+            ? "Unable to remove saved post."
+            : "Unable to save post.",
+        );
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   }
 
