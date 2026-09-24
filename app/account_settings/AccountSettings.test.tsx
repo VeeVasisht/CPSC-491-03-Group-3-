@@ -21,6 +21,6 @@ describe("AccountSettings Component", () => {
 
     const resetLink = screen.getByRole("link", { name: /reset password via email/i });
     expect(resetLink).toBeTruthy();
-    expect(resetLink.getAttribute("href")).toBe("/forget-password");
+    expect(resetLink.getAttribute("href")).toBe("/forgotPassword");
   });
 });

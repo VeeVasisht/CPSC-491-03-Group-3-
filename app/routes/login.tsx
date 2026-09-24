@@ -1,5 +1,13 @@
 import { PublicOnly } from "../components/auth/PublicOnly";
 import { Link } from "react-router";
+import type { Route } from "./+types/login";
+
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "Login | WeTravel" },
+    { name: "description", content: "Login to your account" },
+  ];
+}
 
 export default function Login() {
   return (
