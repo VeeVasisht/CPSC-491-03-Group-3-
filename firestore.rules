@@ -83,6 +83,105 @@ service cloud.firestore {
 
 
     /*
+     * Posts
+     *   Path: /posts/{postId}
+     *   Fields: authorId, title, description, imageUrl, createdAt, updatedAt
+     */
+
+    match /posts/{postId} {
+
+      // Posts may be viewed by anyone.
+      allow read: if true;
+
+      // Signed-in users may create posts only for themselves.
+      allow create: if
+        isSignedIn()
+
+        && request.resource.data.keys().hasAll([
+          'authorId',
+          'title',
+          'description',
+          'imageUrl',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'authorId',
+          'title',
+          'description',
+          'imageUrl',
+          'createdAt',
+          'updatedAt'
+        ])
+
+        && request.resource.data.authorId is string
+        && request.resource.data.authorId == request.auth.uid
+
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 100
+
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0
+        && request.resource.data.description.size() <= 2000
+
+        && request.resource.data.imageUrl is string
+        && request.resource.data.imageUrl.size() > 0
+
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAt == request.time
+
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedAt == request.time;
+
+      // Authors may edit post content, but cannot change ownership
+      // or the original creation timestamp.
+      allow update: if
+        isSignedIn()
+        && resource.data.authorId == request.auth.uid
+
+        && request.resource.data.keys().hasOnly([
+          'authorId',
+          'title',
+          'description',
+          'imageUrl',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.diff(resource.data)
+          .affectedKeys()
+          .hasOnly([
+            'title',
+            'description',
+            'imageUrl',
+            'updatedAt'
+          ])
+
+        && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.createdAt == resource.data.createdAt
+
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 100
+
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0
+        && request.resource.data.description.size() <= 2000
+
+        && request.resource.data.imageUrl is string
+        && request.resource.data.imageUrl.size() > 0
+
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedAt == request.time;
+
+      // Only the post author may delete the post.
+      allow delete: if
+        isSignedIn()
+        && resource.data.authorId == request.auth.uid;
+    }
+
+
+    /*
      * Default deny — any path not explicitly allowed above is blocked.
      */
     match /{document=**} {
