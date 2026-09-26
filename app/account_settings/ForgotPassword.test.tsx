@@ -1,16 +1,21 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+// @vitest-environment jsdom
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import ForgotPassword from "./ForgotPassword";
-import * as authModule from "../app/firebase/auth";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import * as authModule from "../firebase/auth";
+import { ForgotPassword } from "./ForgotPassword";
 
-vi.mock("../app/firebase/auth", () => ({
+vi.mock("../firebase/auth", () => ({
   resetPassword: vi.fn(),
 }));
 
 describe("ForgotPassword Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   const renderComponent = () =>
@@ -22,9 +27,9 @@ describe("ForgotPassword Component", () => {
 
   it("renders the forgot password form correctly", () => {
     renderComponent();
-    expect(screen.getByRole("heading", { name: /reset password/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /send reset link/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /reset password/i })).toBeTruthy();
+    expect(screen.getByLabelText(/email address/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /send reset link/i })).toBeTruthy();
   });
 
   it("shows client-side error on invalid email submission", async () => {
@@ -33,12 +38,12 @@ describe("ForgotPassword Component", () => {
 
     fireEvent.click(submitBtn);
 
-    expect(await screen.findByText(/email address is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/email address is required/i)).toBeTruthy();
     expect(authModule.resetPassword).not.toHaveBeenCalled();
   });
 
   it("renders loading state and triggers resetPassword on valid submit", async () => {
-    vi.mocked(authModule.resetPassword).mockReturnValue(new Promise(() => {}));
+    vi.mocked(authModule.resetPassword).mockReturnValue(new Promise<void>(() => {}));
     renderComponent();
 
     const input = screen.getByLabelText(/email address/i);
@@ -47,7 +52,7 @@ describe("ForgotPassword Component", () => {
     const submitBtn = screen.getByRole("button", { name: /send reset link/i });
     fireEvent.click(submitBtn);
 
-    expect(await screen.findByRole("button", { name: /sending link\.\.\./i })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /sending link\.\.\./i })).toBeTruthy();
     expect(authModule.resetPassword).toHaveBeenCalledWith("test@example.com");
   });
 
@@ -63,8 +68,8 @@ describe("ForgotPassword Component", () => {
 
     expect(
       await screen.findByText(/password reset link sent! check your inbox for instructions\./i)
-    ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /return to log in/i })).toBeInTheDocument();
+    ).toBeTruthy();
+    expect(screen.getByRole("link", { name: /return to log in/i })).toBeTruthy();
   });
 
   it("renders error alert banner on backend/Firebase failure", async () => {
@@ -81,6 +86,6 @@ describe("ForgotPassword Component", () => {
 
     expect(
       await screen.findByText(/no account found with this email address\./i)
-    ).toBeInTheDocument();
+    ).toBeTruthy();
   });
 });
