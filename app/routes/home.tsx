@@ -1,6 +1,7 @@
 import type { Route } from "./+types/home";
 
-import { LogoutButton } from "../components/LogoutButton";
+import { RequireAuth } from "../components/auth/RequireAuth";
+import { MainNav } from "../components/navigation/MainNav";
 import { Welcome } from "../welcome/welcome";
 
 export function meta({}: Route.MetaArgs) {
@@ -10,19 +11,17 @@ export function meta({}: Route.MetaArgs) {
     },
     {
       name: "description",
-      content: "Welcome to WeTravel Website!",
+      content: "Welcome to WeTravel!",
     },
   ];
 }
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen">
-      <div className="fixed right-6 top-6 z-50 w-32">
-        <LogoutButton />
-      </div>
+    <RequireAuth>
+      <MainNav />
 
       <Welcome />
-    </div>
+    </RequireAuth>
   );
 }
