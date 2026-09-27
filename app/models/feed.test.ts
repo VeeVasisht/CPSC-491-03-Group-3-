@@ -14,8 +14,11 @@ function makePosts(count: number): FeedPost[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `post-${i}`,
     authorId: `user-${i % 3}`,
-    content: `Post number ${i}`,
-    createdAt: 1_000 + (count - i), // later index = older; all unique
+    title: `Post ${i}`,
+    description: `Description ${i}`,
+    imageUrl: `https://img/${i}.png`,
+    createdAt: 1_000 + (count - i),
+    updatedAt: 1_000 + (count - i),
   }));
 }
 
@@ -32,7 +35,6 @@ describe("paginateFeed", () => {
     const posts = makePosts(25);
     const first = paginateFeed(posts);
     const second = paginateFeed(posts, first.nextCursor);
-
     expect(second.posts).toHaveLength(PAGE_SIZE);
     const firstIds = new Set(first.posts.map((p) => p.id));
     for (const p of second.posts) {
@@ -55,10 +57,9 @@ describe("paginateFeed", () => {
   });
 
   it("marks the last page with a null cursor and does not over-read", () => {
-    const posts = makePosts(15); // one full page + a short second page
+    const posts = makePosts(15);
     const first = paginateFeed(posts);
     expect(first.nextCursor).not.toBeNull();
-
     const second = paginateFeed(posts, first.nextCursor);
     expect(second.posts).toHaveLength(5);
     expect(second.nextCursor).toBeNull();
@@ -82,41 +83,41 @@ describe("paginateFeed", () => {
 });
 
 describe("normalizePost", () => {
-  it("trims content and keeps required fields", () => {
+  it("trims title and description and keeps required fields", () => {
     const post = normalizePost({
       id: "a1",
       authorId: "user-1",
-      content: "  hello world  ",
+      title: "  Hello  ",
+      description: "  world  ",
+      imageUrl: "http://x/y.png",
       createdAt: 1234,
     });
     expect(post).toEqual({
       id: "a1",
       authorId: "user-1",
-      content: "hello world",
+      title: "Hello",
+      description: "world",
+      imageUrl: "http://x/y.png",
       createdAt: 1234,
+      updatedAt: 1234,
     });
   });
 
-  it("defaults missing content to an empty string", () => {
+  it("defaults missing title/description to empty strings", () => {
     const post = normalizePost({
       id: "a1",
       authorId: "user-1",
       createdAt: 1234,
-      content: null,
+      title: null,
+      description: null,
     });
-    expect(post.content).toBe("");
+    expect(post.title).toBe("");
+    expect(post.description).toBe("");
   });
 
-  it("keeps a non-empty imageUrl but drops an empty one", () => {
-    const withImg = normalizePost({
-      id: "a1", authorId: "u", createdAt: 1, imageUrl: "http://x/y.png",
-    });
-    expect(withImg.imageUrl).toBe("http://x/y.png");
-
-    const withoutImg = normalizePost({
-      id: "a2", authorId: "u", createdAt: 1, imageUrl: "",
-    });
-    expect(withoutImg.imageUrl).toBeUndefined();
+  it("defaults updatedAt to createdAt when missing", () => {
+    const post = normalizePost({ id: "a1", authorId: "u", createdAt: 1234 });
+    expect(post.updatedAt).toBe(1234);
   });
 
   it("throws when a required field is missing (retrieval failure)", () => {

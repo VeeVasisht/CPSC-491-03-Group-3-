@@ -1,72 +1,71 @@
 // app/models/feed.ts
 
 /**
- * Shared feed domain model for WeTravel (P3 slice, Sprint 2).
+ * Feed Retrieval & Pagination domain model for WeTravel (P3 slice, Sprint 2).
  *
- * Pure domain logic — no Firebase imports on purpose. The UI, the feed
- * service, and the tests all share these types and rules. Timestamps are
- * epoch milliseconds; the service layer converts to/from Firestore's
- * Timestamp at the boundary, so this file never depends on the backend.
+ * The canonical post shape is `Post` in ./post (owned by the posts feature).
+ * FeedPost mirrors those fields but stores `createdAt`/`updatedAt` as epoch
+ * milliseconds instead of Firestore `Timestamp`s, so the pagination logic
+ * stays pure and unit-testable with no Firebase dependency. The service layer
+ * converts Firestore `Timestamp` -> ms at the boundary before calling in here.
  *
- * The feed is newest-first. Pagination is cursor-based on `createdAt`:
- * the service asks Firestore for posts older than the last cursor, and
- * this module owns the pure slicing/normalization logic around it.
+ * TODO (once #16 merges and app/models/post.ts is on main): import Post as the
+ * single source of truth and add a toFeedPost(post: Post) boundary mapper.
  */
 
 export const PAGE_SIZE = 10;
 
-/** A feed post as the app uses it. */
+/** Pagination view of a Post — same fields, timestamps as epoch ms. */
 export interface FeedPost {
-  id: string;         // Firestore document id
-  authorId: string;   // uid of the poster
-  content: string;    // trimmed text body
-  createdAt: number;  // epoch ms — used for ordering and as the page cursor
-  imageUrl?: string;  // optional attached image
+  id: string;
+  authorId: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  createdAt: number; // epoch ms — ordering + page cursor
+  updatedAt: number; // epoch ms
 }
 
-/** One page of feed results plus the cursor to fetch the next (older) page. */
+/** One page of feed results plus the cursor for the next (older) page. */
 export interface FeedPage {
   posts: FeedPost[];
   nextCursor: number | null; // createdAt to fetch after; null = no more pages
 }
 
-/** Shape of a raw post record before normalization (e.g. from Firestore). */
+/** Raw record before normalization (from Firestore; timestamps already ms). */
 export interface RawFeedPost {
   id: string;
   authorId: string;
-  content?: string | null;
-  createdAt: number;
+  title?: string | null;
+  description?: string | null;
   imageUrl?: string | null;
+  createdAt: number;
+  updatedAt?: number | null;
 }
 
 /**
- * Clean a raw post record into a FeedPost. Trims the content and drops an
- * empty imageUrl. Throws if a required field (id, authorId, createdAt) is
- * missing — the service layer treats a throw here as a retrieval failure.
+ * Clean a raw record into a FeedPost. Trims text fields; throws if a required
+ * field (id, authorId, createdAt) is missing — the service treats a throw as a
+ * retrieval failure.
  */
 export function normalizePost(raw: RawFeedPost): FeedPost {
   if (!raw || !raw.id || !raw.authorId || typeof raw.createdAt !== "number") {
     throw new Error("Invalid feed post: missing id, authorId, or createdAt");
   }
-  const post: FeedPost = {
+  return {
     id: raw.id,
     authorId: raw.authorId,
-    content: (raw.content ?? "").trim(),
+    title: (raw.title ?? "").trim(),
+    description: (raw.description ?? "").trim(),
+    imageUrl: (raw.imageUrl ?? "").trim(),
     createdAt: raw.createdAt,
+    updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : raw.createdAt,
   };
-  if (raw.imageUrl) {
-    post.imageUrl = raw.imageUrl;
-  }
-  return post;
 }
 
 /**
- * Return one page of the feed, newest first, plus the cursor for the next
- * page. Pure function over an in-memory list — the service supplies the
- * candidate posts (already fetched from Firestore) and this slices them.
- *
- * @param allPosts candidate posts (any order)
- * @param cursor   createdAt of the last post seen; null/omitted = first page
+ * Return one page of the feed, newest first, plus the next-page cursor.
+ * Pure function over an in-memory list.
  */
 export function paginateFeed(
   allPosts: FeedPost[],
