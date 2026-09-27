@@ -1,0 +1,183 @@
+@import "@firebase-oss/ui-styles/dist.min.css";
+
+.registration-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+
+    background:
+        linear-gradient(
+            135deg,
+            #f4f8ff 0%,
+            #eef6f5 100%
+        );
+}
+
+.registration-card {
+    width: 100%;
+    max-width: 460px;
+
+    background: white;
+
+    padding: 2.5rem;
+
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.registration-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.registration-header h1 {
+    margin: 0;
+
+    font-size: 2rem;
+    font-weight: 700;
+
+    color: #111827;
+}
+
+.registration-header p {
+    margin-top: 0.75rem;
+
+    font-size: 0.95rem;
+    line-height: 1.5;
+
+    color: #6b7280;
+}
+
+.registration-auth {
+    width: 100%;
+}
+
+/* Divider */
+
+.registration-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    margin: 1.5rem 0;
+
+    color: #9ca3af;
+
+    font-size: 0.85rem;
+}
+
+.registration-divider::before,
+.registration-divider::after {
+    content: "";
+
+    flex: 1;
+
+    height: 1px;
+
+    background: #e5e7eb;
+}
+
+/* Footer */
+
+.registration-footer {
+    margin-top: 2rem;
+
+    text-align: center;
+
+    font-size: 0.9rem;
+
+    color: #6b7280;
+}
+
+.registration-footer p {
+    margin: 0;
+}
+
+.registration-footer a {
+    color: #2563eb;
+
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.registration-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Keep FirebaseUI from overflowing the card */
+
+.registration-auth > * {
+    width: 100%;
+}
+
+/* Mobile */
+
+@media (max-width: 520px) {
+    .registration-page {
+        align-items: flex-start;
+
+        padding: 1rem;
+
+        background: white;
+    }
+
+    .registration-card {
+        padding: 1.5rem;
+
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .registration-header h1 {
+        font-size: 1.75rem;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .registration-page {
+        background: linear-gradient(
+            135deg,
+            #111827 0%,
+            #172033 100%
+        );
+    }
+
+    .registration-card {
+        background: #1f2937;
+        border-color: #374151;
+
+        box-shadow:
+            0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .registration-header h1 {
+        color: #f9fafb;
+    }
+
+    .registration-header p {
+        color: #d1d5db;
+    }
+
+    .registration-divider {
+        color: #9ca3af;
+    }
+
+    .registration-divider::before,
+    .registration-divider::after {
+        background: #4b5563;
+    }
+
+    .registration-footer {
+        color: #d1d5db;
+    }
+
+    .registration-footer a {
+        color: #93c5fd;
+    }
+}

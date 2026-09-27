@@ -8,10 +8,16 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+
+import { AuthSessionProvider } from "./session/AuthSessionContext";
+
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  {
+    rel: "preconnect",
+    href: "https://fonts.googleapis.com",
+  },
   {
     rel: "preconnect",
     href: "https://fonts.gstatic.com",
@@ -28,12 +34,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
+
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
         <Meta />
         <Links />
       </head>
+
       <body>
         {children}
+
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -42,16 +52,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <AuthSessionProvider>
+      <Outlet />
+    </AuthSessionProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let message = "Oops!";
   let details = "An unexpected error occurred.";
+
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
     message = error.status === 404 ? "404" : "Error";
+
     details =
       error.status === 404
         ? "The requested page could not be found."
@@ -64,7 +80,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return (
     <main className="pt-16 p-4 container mx-auto">
       <h1>{message}</h1>
+
       <p>{details}</p>
+
       {stack && (
         <pre className="w-full p-4 overflow-x-auto">
           <code>{stack}</code>
