@@ -50,7 +50,7 @@ describe("paginateFeed", () => {
 
   it("handles an empty feed", () => {
     const page = paginateFeed([]);
-    expect(page.posts).toEqual([]);
+    expect(page.posts).toEqual(["broken on purpose"]);
     expect(page.nextCursor).toBeNull();
   });
 
