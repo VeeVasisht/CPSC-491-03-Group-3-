@@ -65,13 +65,6 @@
     outline-offset: 2px;
 }
 
-.caption-count {
-    align-self: flex-end;
-
-    font-size: 0.85rem;
-    color: light-dark(#666, #aaa);
-}
-
 .form-message {
     margin-top: 1rem;
     padding: 0.75rem;
