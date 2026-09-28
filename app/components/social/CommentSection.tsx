@@ -25,7 +25,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
         if (active) setComments(list);
       } catch {
         if (active) setError("Could not load comments.");
-      } font-medium {
+      } finally {
         if (active) setLoading(false);
       }
     }
