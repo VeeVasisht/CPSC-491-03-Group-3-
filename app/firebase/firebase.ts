@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { connectStorageEmulator, getStorage } from "firebase/storage";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -22,8 +23,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-export { app, auth, db };
+export { app, auth, db, storage };
 
 if (import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true") {
   try {
@@ -35,5 +37,10 @@ if (import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true") {
     connectFirestoreEmulator(db, "127.0.0.1", 8080);
   } catch (error) {
     console.error("Error connecting to firestore emulator: ", error);
+  }
+  try {
+    connectStorageEmulator(storage, "127.0.0.1", 9199);
+  } catch (error) {
+    console.error("Error connecting to storage emulator: ", error);
   }
 }
