@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { createPost } from "../firebase/posts";
 
@@ -17,6 +17,20 @@ export default function CreatePost() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (!image) {
+      setImagePreview(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(image);
+    setImagePreview(previewUrl);
+
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [image]);
 
   async function submitPost() {
     setError("");
@@ -49,8 +63,6 @@ export default function CreatePost() {
       setTitle("");
       setDescription("");
       setImage(null);
-      setImagePreview(null);
-
       setSuccess("Post created successfully.");
     } catch (error) {
       console.error("Failed to create post:", error);
@@ -63,19 +75,6 @@ export default function CreatePost() {
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  function handleImageChange(file: File | null) {
-    setImage(file);
-
-    if (!file) {
-      setImagePreview(null);
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(file);
-
-    setImagePreview(previewUrl);
   }
 
   return (
@@ -135,9 +134,7 @@ export default function CreatePost() {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               disabled={isSubmitting}
-              onChange={(event) =>
-                handleImageChange(event.target.files?.[0] ?? null)
-              }
+              onChange={(event) => setImage(event.target.files?.[0] ?? null)}
               required
             />
           </div>

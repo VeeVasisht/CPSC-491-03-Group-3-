@@ -40,13 +40,12 @@
     font-weight: 600;
 }
 
+.form-group input,
 .form-group textarea {
     box-sizing: border-box;
     width: 100%;
 
     padding: 0.75rem;
-
-    resize: vertical;
 
     border: 1px solid light-dark(#bbb, #555);
     border-radius: 8px;
@@ -55,6 +54,10 @@
     color: inherit;
 
     font: inherit;
+}
+
+.form-group textarea {
+    resize: vertical;
 }
 
 .form-group textarea:focus {
@@ -104,26 +107,6 @@
 .create-post-card button:disabled {
     cursor: not-allowed;
     opacity: 0.6;
-}
-
-.form-group input,
-.form-group textarea {
-    box-sizing: border-box;
-    width: 100%;
-
-    padding: 0.75rem;
-
-    border: 1px solid light-dark(#bbb, #555);
-    border-radius: 8px;
-
-    background-color: light-dark(#fff, #1c1c1c);
-    color: inherit;
-
-    font: inherit;
-}
-
-.form-group textarea {
-    resize: vertical;
 }
 
 .character-count {
