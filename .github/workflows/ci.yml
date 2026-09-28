@@ -1,4 +1,4 @@
-name: CI
+name: CI Pipeline
 
 on:
   pull_request:
@@ -15,16 +15,24 @@ jobs:
   test:
     name: Unit Tests & Type Check
     runs-on: ubuntu-latest
+
     steps:
+      - name: Checkout Code
       - uses: actions/checkout@v4
+
+      - name: Setup Node.js
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+
+      - name: Install Dependencies
       - run: npm ci
+
       - name: Type check
         run: npm run typecheck
         continue-on-error: true
+
       - name: Run unit tests
         run: npx vitest run
 
@@ -40,11 +48,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+
       - name: Set build version
         run: echo "BUILD_VERSION=build-${{ github.run_number }}-$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_ENV"
+
       - name: Show build version
         run: echo "Building $BUILD_VERSION"
+
       - name: Build
         run: npm run build
+        
       - name: Build summary
         run: echo "Built \`$BUILD_VERSION\`" >> "$GITHUB_STEP_SUMMARY"
