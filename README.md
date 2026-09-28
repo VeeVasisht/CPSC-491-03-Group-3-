@@ -13,10 +13,12 @@ To test the website with emulators run:
 ```
 firebase emulators:start
 ```
+
 and in another terminal:
 ```
 npm run dev
 ```
+
 Open the link it gives to the website.
 Any data you post / accounts you create can be viewed
 in the links the emulator gives you.
@@ -29,29 +31,51 @@ After commits the main branch should look like the following tree.
 .github/workflows/
 │   ├── ci.yml
 app/
+│   ├── account_settings/
+│   │   ├── AccountSettings.test.tsx
+│   │   ├── AccountSettings.tsx
+│   │   ├── ForgotPassword.test.tsx
+│   │   ├── ForgotPassword.tsx
 │   ├── components/
 │   │   ├── auth/
 │   │   │   ├── PublicOnly.tsx
 │   │   │   └── RequireAuth.tsx
+│   │   ├── location/
+│   │   │   ├── LocationPicker.tsx
+│   │   │   └── PostLocation.tsx
 │   │   ├── navigation/
 │   │   │   └── MainNav.tsx
+│   │   ├── saves/
+│   │   │   └── SavePostButton.tsx
 │   │   └── session/
 │   │   │   ├── SessionErrorState.tsx
-│   │   │   └──SessionLoadingScreen.tsx
+│   │   │   └── SessionLoadingScreen.tsx
+│   │   ├── social/
+│   │   │   ├── CommentSection.tsx
+│   │   │   └── LikeButton.tsx
+│   ├── create_post/
+│   │   └── CreatePost.tsx
 │   ├── css/
+│   │   ├── CreatePost.css
 │   │   └── registration.css
 │   ├── firebase/
 │   │   ├── auth.integration.test.ts
 │   │   ├── auth.resetPassword.test.ts
 │   │   ├── auth.test.ts
 │   │   ├── auth.ts
+│   │   ├── createPost.test.ts
 │   │   ├── firebase.ts
-│   │   └── firebaseUI.ts
+│   │   ├── firebaseUI.ts
+│   │   └── posts.ts
 │   ├── models/
+│   │   ├── comment.test.ts
 │   │   ├── comment.ts
 │   │   ├── forgetPassword.test.ts
 │   │   ├── forgetPassword.ts
+│   │   ├── geotag.test.ts
+│   │   ├── geotag.ts
 │   │   ├── like.ts
+│   │   ├── posts.ts
 │   │   ├── userProfile.test.ts
 │   │   └── userProfile.ts
 │   ├── profile/
@@ -59,13 +83,22 @@ app/
 │   ├── registration/
 │   │   └── Registration.tsx
 │   ├── routes/
+│   │   ├── accountSettings.tsx
+│   │   ├── createPost.tsx
+│   │   ├── forgotPassword.tsx
 │   │   ├── home.tsx
 │   │   ├── login.tsx
 │   │   ├── profile.tsx
 │   │   └── registration.tsx
 │   ├── services/
+│   │   ├── postLocationService.test.ts
+│   │   ├── postLocationService.ts
 │   │   ├── profileService.test.ts
-│   │   └── profileService.ts
+│   │   ├── profileService.ts
+│   │   ├── savedPostService.test.ts
+│   │   ├── savedPostService.ts
+│   │   ├── socialService.test.ts
+│   │   └── socialService.ts
 │   ├── session/
 │   │   ├── AuthSessionContext.tsx
 │   │   ├── sessionRouting.test.ts
@@ -73,8 +106,6 @@ app/
 │   │   ├── sessionService.test.ts
 │   │   └── sessionService.ts
 │   └── welcome/
-│   │   ├── logo-dark.svg
-│   │   ├── logo-light.svg
 │   │   └── welcome.tsx
 │   ├── app.css
 │   ├── authService.js
@@ -106,8 +137,8 @@ app/
 ├── package-lock.json
 ├── package.json
 ├── react-router.config.js
+├── storage.rules
 ├── tsconfig.json
 ├── vite.config.ts
-├── vitest.config.ts
-└── we_travel.jsx (empty file)
+└── vitest.config.ts
 ```
