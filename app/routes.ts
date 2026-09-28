@@ -11,4 +11,5 @@ export default [
   route("forgotPassword", "routes/forgotPassword.tsx"),
   route("accountSettings", "routes/accountSettings.tsx"),
   route("profile", "routes/profile.tsx"),
+  route("media-test", "routes/mediaTest.tsx"),
 ] satisfies RouteConfig;
