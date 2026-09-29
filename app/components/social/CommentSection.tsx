@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthSession } from "../../session/AuthSessionContext";
 import { addComment, getPostComments } from "../../services/socialService";
 import { validateCommentInput, type Comment } from "../../models/comment";
@@ -19,7 +19,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
   const commentsEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
-    commentEndRef.current?.scrollIntoView({ behaviour: "smooth" });
+    commentsEndRef.current?.scrollIntoView({ behaviour: "smooth" });
   };
 
   useEffect(() => {
