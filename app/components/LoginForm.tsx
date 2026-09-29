@@ -1,7 +1,9 @@
+
 import {
   useState,
   type FormEvent,
 } from "react";
+
 import { useNavigate } from "react-router";
 
 import { signIn } from "../firebase/auth";
@@ -50,12 +52,12 @@ export function LoginForm() {
         replace: true,
       });
     } catch (error) {
-  console.error("Login error:", error);
+      console.error("Login error:", error);
 
-  setLoginError(
-    getLoginErrorMessage(error),
-  );
-} finally {
+      setLoginError(
+        getLoginErrorMessage(error),
+      );
+    } finally {
       setIsLoading(false);
     }
   }
@@ -85,10 +87,20 @@ export function LoginForm() {
             setEmail(event.target.value)
           }
           disabled={isLoading}
+          aria-invalid={Boolean(fieldErrors.email)}
+          aria-describedby={
+            fieldErrors.email
+              ? "email-error"
+              : undefined
+          }
         />
 
         {fieldErrors.email && (
-          <p className="text-sm text-red-600">
+          <p
+            id="email-error"
+            className="text-sm text-red-600"
+            role="alert"
+          >
             {fieldErrors.email}
           </p>
         )}
@@ -113,10 +125,22 @@ export function LoginForm() {
             setPassword(event.target.value)
           }
           disabled={isLoading}
+          aria-invalid={Boolean(
+            fieldErrors.password,
+          )}
+          aria-describedby={
+            fieldErrors.password
+              ? "password-error"
+              : undefined
+          }
         />
 
         {fieldErrors.password && (
-          <p className="text-sm text-red-600">
+          <p
+            id="password-error"
+            className="text-sm text-red-600"
+            role="alert"
+          >
             {fieldErrors.password}
           </p>
         )}
@@ -143,3 +167,4 @@ export function LoginForm() {
     </form>
   );
 }
+```
