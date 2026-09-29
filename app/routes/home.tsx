@@ -1,27 +1,33 @@
+import { useEffect } from "react";
 import type { Route } from "./+types/home";
 
-import { RequireAuth } from "../components/auth/RequireAuth";
-import { MainNav } from "../components/navigation/MainNav";
+import { LogoutButton } from "../components/LogoutButton";
 import { Welcome } from "../welcome/welcome";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    {
-      title: "WeTravel",
-    },
+    { title: "WeTravel" },
     {
       name: "description",
-      content: "Welcome to WeTravel!",
+      content: "Welcome to WeTravel Website!",
     },
   ];
 }
 
 export default function Home() {
+  useEffect(() => {
+    // Put any code here that needs to run
+    // when the Home page first loads.
+    console.log("Home page loaded");
+  }, []);
+
   return (
-    <RequireAuth>
-      <MainNav />
+    <div className="relative min-h-screen">
+      <div className="fixed right-6 top-6 z-50 w-32">
+        <LogoutButton />
+      </div>
 
       <Welcome />
-    </RequireAuth>
+    </div>
   );
 }
