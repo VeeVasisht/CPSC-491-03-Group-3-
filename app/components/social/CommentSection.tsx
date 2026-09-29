@@ -19,7 +19,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
   const commentsEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
-    commentsEndRef.current?.scrollIntoView({ behaviour: "smooth" });
+    commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
