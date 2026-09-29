@@ -5,6 +5,7 @@ import {
 } from "@react-router/dev/routes";
 
 export default [
+<<<<<<< HEAD
   index("routes/home.tsx"),
   route("registration", "routes/registration.tsx"),
   route("login", "routes/login.tsx"),
@@ -13,3 +14,13 @@ export default [
   route("profile", "routes/profile.tsx"),
   route("media-test", "routes/mediaTest.tsx"),
 ] satisfies RouteConfig;
+=======
+    index("routes/home.tsx"),
+    route("registration", "routes/registration.tsx"),
+    route("login", "routes/login.tsx"),
+    route("forgotPassword", "routes/forgotPassword.tsx"),
+    route("accountSettings", "routes/accountSettings.tsx"),
+    route("profile", "routes/profile.tsx"),
+    route("createPost", "routes/createPost.tsx")
+] satisfies RouteConfig;
+>>>>>>> origin/main

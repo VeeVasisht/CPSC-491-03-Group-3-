@@ -1,5 +1,3 @@
-import logoDark from "./logo-dark.svg";
-import logoLight from "./logo-light.svg";
 import { Link } from "react-router";
 
 export function Welcome() {
@@ -13,7 +11,8 @@ export function Welcome() {
           <nav className="rounded-3xl border border-gray-200 p-6 dark:border-gray-700 space-y-4">
             <Link to="/accountSettings">Account Settings</Link> <br/>
             <Link to="/forgotPassword">Forgot Password</Link> <br/>
-            <Link to="/registration">Registration</Link>
+            <Link to="/registration">Registration</Link> <br />
+            <Link to="/createPost">Create a Post</Link>
           </nav>
         </div>
       </div>

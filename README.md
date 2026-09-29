@@ -1,7 +1,13 @@
 # CPSC-491-03-Group-3-
+
 All code work for Senior CapStone Project
 
-## Directions for running
+## Automatic Deployment
+Once a PR is merged into main, the production build is updated and
+deployed to this website: [wetravel-569a0.web.app](wetravel-569a0.web.app)
+
+## Directions for Running the Dev Build
+
 Make sure firebase-tools is installed:
 ```
 firebase --version
@@ -11,38 +17,99 @@ To test the website with emulators run:
 ```
 firebase emulators:start
 ```
+
 and in another terminal:
 ```
 npm run dev
 ```
+
 Open the link it gives to the website.
 Any data you post / accounts you create can be viewed
 in the links the emulator gives you.
-# We Travel Structure
+
+## We Travel Structure
 
 After commits the main branch should look like the following tree.
 
+```text
+.github/workflows/
+│   ├── ci.yml
 app/
+│   ├── account_settings/
+│   │   ├── AccountSettings.test.tsx
+│   │   ├── AccountSettings.tsx
+│   │   ├── ForgotPassword.test.tsx
+│   │   ├── ForgotPassword.tsx
 │   ├── components/
-│   │   ├── LoginForm.tsx
-│   │   ├── LogoutButton.tsx
+│   │   ├── auth/
+│   │   │   ├── PublicOnly.tsx
+│   │   │   └── RequireAuth.tsx
+│   │   ├── location/
+│   │   │   ├── LocationPicker.tsx
+│   │   │   └── PostLocation.tsx
+│   │   ├── navigation/
+│   │   │   └── MainNav.tsx
+│   │   ├── saves/
+│   │   │   └── SavePostButton.tsx
+│   │   └── session/
+│   │   │   ├── SessionErrorState.tsx
+│   │   │   └── SessionLoadingScreen.tsx
+│   │   ├── social/
+│   │   │   ├── CommentSection.tsx
+│   │   │   └── LikeButton.tsx
+│   ├── create_post/
+│   │   └── CreatePost.tsx
+│   ├── css/
+│   │   ├── CreatePost.css
+│   │   └── registration.css
 │   ├── firebase/
 │   │   ├── auth.integration.test.ts
+│   │   ├── auth.resetPassword.test.ts
 │   │   ├── auth.test.ts
 │   │   ├── auth.ts
+│   │   ├── createPost.test.ts
 │   │   ├── firebase.ts
-│   │   └── loginLogout.test.ts
+│   │   ├── firebaseUI.ts
+│   │   └── posts.ts
 │   ├── models/
-│   │   ├── login.test.ts
-│   │   ├── login.ts
+│   │   ├── comment.test.ts
+│   │   ├── comment.ts
+│   │   ├── forgetPassword.test.ts
+│   │   ├── forgetPassword.ts
+│   │   ├── geotag.test.ts
+│   │   ├── geotag.ts
+│   │   ├── like.ts
+│   │   ├── posts.ts
 │   │   ├── userProfile.test.ts
 │   │   └── userProfile.ts
+│   ├── profile/
+│   │   └── Profile.tsx
+│   ├── registration/
+│   │   └── Registration.tsx
 │   ├── routes/
+│   │   ├── accountSettings.tsx
+│   │   ├── createPost.tsx
+│   │   ├── forgotPassword.tsx
 │   │   ├── home.tsx
-│   │   └── login.tsx
-│   └── welcome
-│   │   ├── logo-dark.svg
-│   │   ├── logo-light.svg
+│   │   ├── login.tsx
+│   │   ├── profile.tsx
+│   │   └── registration.tsx
+│   ├── services/
+│   │   ├── postLocationService.test.ts
+│   │   ├── postLocationService.ts
+│   │   ├── profileService.test.ts
+│   │   ├── profileService.ts
+│   │   ├── savedPostService.test.ts
+│   │   ├── savedPostService.ts
+│   │   ├── socialService.test.ts
+│   │   └── socialService.ts
+│   ├── session/
+│   │   ├── AuthSessionContext.tsx
+│   │   ├── sessionRouting.test.ts
+│   │   ├── sessionRouting.ts
+│   │   ├── sessionService.test.ts
+│   │   └── sessionService.ts
+│   └── welcome/
 │   │   └── welcome.tsx
 │   ├── app.css
 │   ├── authService.js
@@ -53,23 +120,29 @@ app/
 ├── components/
 │   ├── Button.jsx
 │   └── FormMessage.jsx
+├── docs/
+│   └──sprint1-navigation-session.md
 ├── pages/
-│   ├── ForgotPassword.jsx
-│   └── AccountSettings.jsx
+│   ├── AccountSettings.jsx
+│   ├── AccountSettings.test.jsx
+│   ├── ForgetPassword.jsx
+│   └── ForgetPassword.test.jsx
 ├── public/
 │   └── favicon.ico
 ├── .dockerignore
+├── .env.emulator
 ├── .firebaserc
 ├── .gitignore
 ├── Dockerfile
 ├── README.md
 ├── firebase.json
-├── firestore-debug.log
 ├── firestore.indexes.json
 ├── firestore.rules
 ├── package-lock.json
 ├── package.json
 ├── react-router.config.js
+├── storage.rules
 ├── tsconfig.json
 ├── vite.config.ts
-└── we_travel.jsx
+└── vitest.config.ts
+```
