@@ -107,7 +107,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
             value={content}
             onChange={(e) => {
               setContent(e.target.value);
-              if (error) setError(null):
+              if (error) setError(null);
             }}
             onKeyDown={handleKeyDown}
             placeholder="Write a comment..."
