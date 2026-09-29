@@ -1,4 +1,7 @@
-import { useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import { auth } from "../firebase/firebase";
 import { uploadPostImage } from "../firebase/mediaStorage";
@@ -28,6 +31,14 @@ export function PostMediaPicker({
 
   const [uploadFailed, setUploadFailed] =
     useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   function handleFileChange(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -196,3 +207,4 @@ export function PostMediaPicker({
     </div>
   );
 }
+```
