@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuthSession } from "../../session/AuthSessionContext";
 import { addComment, getPostComments } from "../../services/socialService";
 import { validateCommentInput, type Comment } from "../../models/comment";
@@ -15,6 +15,12 @@ export function CommentSection({ postId }: CommentSectionProps) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const commentsEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    commentsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     let active = true;
@@ -60,10 +66,19 @@ export function CommentSection({ postId }: CommentSectionProps) {
 
       setComments((prev) => [...prev, newComment]);
       setContent("");
+
+      setTimeout(scrollToBottom, 100);
     } catch {
       setError("Failed to post comment. Try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      void handleSubmit();
     }
   }
 
@@ -90,7 +105,11 @@ export function CommentSection({ postId }: CommentSectionProps) {
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-2">
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              if (error) setError(null);
+            }}
+            onKeyDown={handleKeyDown}
             placeholder="Write a comment..."
             rows={2}
             className="w-full rounded-lg border border-gray-300 dark:border-gray-700 p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
