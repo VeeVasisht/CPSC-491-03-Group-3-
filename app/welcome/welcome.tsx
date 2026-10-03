@@ -12,7 +12,8 @@ export function Welcome() {
             <Link to="/accountSettings">Account Settings</Link> <br/>
             <Link to="/forgotPassword">Forgot Password</Link> <br/>
             <Link to="/registration">Registration</Link> <br />
-            <Link to="/createPost">Create a Post</Link>
+            <Link to="/createPost">Create a Post</Link> <br />
+            <Link to="/map">Go to the Map</Link>
           </nav>
         </div>
       </div>
