@@ -2,11 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
-<<<<<<< HEAD
 import { connectStorageEmulator, getStorage,} from "firebase/storage";
-=======
-import { connectStorageEmulator, getStorage } from "firebase/storage";
->>>>>>> origin/main
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -43,14 +39,7 @@ if (import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true") {
     console.error("Error connecting to firestore emulator: ", error);
   }
   try {
-<<<<<<< HEAD
   connectStorageEmulator(storage, "127.0.0.1", 9199,);
-=======
-    connectStorageEmulator(storage, "127.0.0.1", 9199);
-  } catch (error) {
-    console.error("Error connecting to storage emulator: ", error);
-  }
->>>>>>> origin/main
 }
  catch (error) 
 {

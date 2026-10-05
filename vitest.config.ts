@@ -7,6 +7,6 @@ export default defineConfig({
     exclude: [
       "**/*.integration.test.ts",
       "node_modules/**",
-    ],
+    ],  
   },
 });
