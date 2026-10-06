@@ -78,7 +78,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
-      void handleSubmit();
+      void handleSubmit(undefined);
     }
   }
 
