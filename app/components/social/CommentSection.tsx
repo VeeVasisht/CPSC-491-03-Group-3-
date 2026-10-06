@@ -43,8 +43,8 @@ export function CommentSection({ postId }: CommentSectionProps) {
     };
   }, [postId]);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     if (!user || submitting) return;
 
     const validation = validateCommentInput(content);
@@ -78,7 +78,7 @@ export function CommentSection({ postId }: CommentSectionProps) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
-      void handleSubmit(undefined);
+      void handleSubmit();
     }
   }
 
