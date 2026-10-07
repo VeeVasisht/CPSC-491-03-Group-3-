@@ -1,57 +1,67 @@
 import {
-  normalizeGeotag,
-  validateGeotag,
-  type Geotag,
-} from "../models/geotag";
+  collection,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+} from "firebase/firestore";
 
-export interface FeedToMapLocation {
-  name: string;
-  latitude: number;
-  longitude: number;
-}
+import { db } from "../firebase/firebase";
 
-export function canOpenLocationOnMap(
-  geotag: Geotag | null | undefined,
-): boolean {
-  if (!geotag) {
-    return false;
-  }
+import {
+  normalizePost,
+  paginateFeed,
+  PAGE_SIZE,
+  type FeedPage,
+} from "../models/feed";
 
-  return validateGeotag(geotag).valid;
-}
+import type { Geotag } from "../models/geotag";
 
-export function getMapLocationFromGeotag(
-  geotag: Geotag | null | undefined,
-): FeedToMapLocation {
-  if (!geotag) {
-    throw new Error("This post does not have a location.");
-  }
+/**
+ * Fetch the first page of the feed, newest posts first.
+ *
+ * Location data is included so a geotagged travel post can be
+ * connected to the map.
+ */
+export async function getFirstFeedPage(): Promise<FeedPage> {
+  const postsRef = collection(db, "posts");
 
-  const validation = validateGeotag(geotag);
+  const q = query(
+    postsRef,
+    orderBy("createdAt", "desc"),
+    limit(PAGE_SIZE + 1),
+  );
 
-  if (!validation.valid) {
-    throw new Error("This post has invalid location data.");
-  }
+  const snapshot = await getDocs(q);
 
-  const location = normalizeGeotag(geotag);
+  const posts = snapshot.docs.map((docSnap) => {
+    const data = docSnap.data();
 
-  return {
-    name: location.name,
-    latitude: location.latitude,
-    longitude: location.longitude,
-  };
-}
+    const location =
+      data.location &&
+      typeof data.location.name === "string" &&
+      typeof data.location.latitude === "number" &&
+      typeof data.location.longitude === "number"
+        ? ({
+            name: data.location.name,
+            latitude: data.location.latitude,
+            longitude: data.location.longitude,
+          } satisfies Geotag)
+        : null;
 
-export function buildMapUrl(
-  geotag: Geotag | null | undefined,
-): string {
-  const location = getMapLocationFromGeotag(geotag);
-
-  const params = new URLSearchParams({
-    lat: String(location.latitude),
-    lng: String(location.longitude),
-    name: location.name,
+    return normalizePost({
+      id: docSnap.id,
+      authorId: data.authorId,
+      title: data.title,
+      description: data.description,
+      imageUrl: data.imageUrl,
+      createdAt:
+        data.createdAt?.toMillis?.() ?? Date.now(),
+      updatedAt:
+        data.updatedAt?.toMillis?.() ?? undefined,
+      location,
+    });
   });
 
-  return `/map?${params.toString()}`;
+  return paginateFeed(posts);
 }
