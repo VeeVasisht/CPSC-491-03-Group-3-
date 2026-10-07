@@ -31,6 +31,7 @@ export async function getFirstFeedPage(): Promise<FeedPage> {
       imageUrl: data.imageUrl,
       createdAt: data.createdAt?.toMillis?.() ?? Date.now(),
       updatedAt: data.updatedAt?.toMillis?.() ?? undefined,
+      location: data.location,
     });
   });
 

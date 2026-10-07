@@ -19,6 +19,7 @@ function makePosts(count: number): FeedPost[] {
     imageUrl: `https://img/${i}.png`,
     createdAt: 1_000 + (count - i),
     updatedAt: 1_000 + (count - i),
+    location: null,
   }));
 }
 
@@ -100,6 +101,7 @@ describe("normalizePost", () => {
       imageUrl: "http://x/y.png",
       createdAt: 1234,
       updatedAt: 1234,
+      location: null,
     });
   });
 
@@ -124,5 +126,40 @@ describe("normalizePost", () => {
     expect(() => normalizePost({ id: "", authorId: "u", createdAt: 1 })).toThrow();
     // @ts-expect-error deliberately missing createdAt to test the guard
     expect(() => normalizePost({ id: "a", authorId: "u" })).toThrow();
+  });
+
+  it("keeps a valid location and trims its name", () => {
+    const post = normalizePost({
+      id: "a1",
+      authorId: "u",
+      createdAt: 1,
+      location: { name: "  Kyoto  ", latitude: 35.0116, longitude: 135.7681 },
+    });
+    expect(post.location).toEqual({
+      name: "Kyoto",
+      latitude: 35.0116,
+      longitude: 135.7681,
+    });
+  });
+
+  it("sets location to null when it is missing or null", () => {
+    expect(normalizePost({ id: "a1", authorId: "u", createdAt: 1 }).location).toBeNull();
+    expect(
+      normalizePost({ id: "a1", authorId: "u", createdAt: 1, location: null }).location,
+    ).toBeNull();
+  });
+
+  it("drops a malformed or out-of-range location instead of throwing", () => {
+    const bad = [
+      "Kyoto",
+      { name: "Kyoto" },
+      { name: "Kyoto", latitude: "35", longitude: 135 },
+      { name: "Kyoto", latitude: 95, longitude: 135 },
+      { name: "Kyoto", latitude: 35, longitude: NaN },
+      { name: "   ", latitude: 35, longitude: 135 },
+    ];
+    for (const location of bad) {
+      expect(normalizePost({ id: "a1", authorId: "u", createdAt: 1, location }).location).toBeNull();
+    }
   });
 });

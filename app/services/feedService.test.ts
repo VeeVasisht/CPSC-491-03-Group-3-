@@ -21,8 +21,20 @@ vi.mock("../firebase/firebase", () => ({ db: mocks.db }));
 
 import { getFirstFeedPage } from "./feedService";
 import { PAGE_SIZE } from "../models/feed";
+import type { Geotag } from "../models/geotag";
 
-function fakeSnapshot(posts) {
+interface FakePost {
+  id: string;
+  authorId: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  createdAt: number;
+  updatedAt?: number;
+  location?: Geotag | null;
+}
+
+function fakeSnapshot(posts: FakePost[]) {
   return {
     docs: posts.map((p) => ({
       id: p.id,
@@ -33,12 +45,13 @@ function fakeSnapshot(posts) {
         imageUrl: p.imageUrl,
         createdAt: { toMillis: () => p.createdAt },
         updatedAt: { toMillis: () => p.updatedAt ?? p.createdAt },
+        ...(p.location !== undefined && { location: p.location }),
       }),
     })),
   };
 }
 
-function makeRawPosts(count) {
+function makeRawPosts(count: number): FakePost[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `post-${i}`,
     authorId: `user-${i}`,
@@ -106,5 +119,20 @@ describe("getFirstFeedPage", () => {
     const page = await getFirstFeedPage();
     expect(page.posts[0].createdAt).toBe(5000);
     expect(page.posts[0].updatedAt).toBe(6000);
+  });
+
+  it("carries a post's location through to the feed", async () => {
+    const location = { name: "Kyoto", latitude: 35.0116, longitude: 135.7681 };
+    mocks.getDocs.mockResolvedValue(
+      fakeSnapshot([{ ...makeRawPosts(1)[0], location }]),
+    );
+    const page = await getFirstFeedPage();
+    expect(page.posts[0].location).toEqual(location);
+  });
+
+  it("sets location to null for posts without one", async () => {
+    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeRawPosts(1)));
+    const page = await getFirstFeedPage();
+    expect(page.posts[0].location).toBeNull();
   });
 });

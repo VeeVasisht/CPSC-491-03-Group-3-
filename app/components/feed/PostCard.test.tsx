@@ -12,6 +12,7 @@ const base: FeedPost = {
   imageUrl: "https://img/kyoto.png",
   createdAt: 1000,
   updatedAt: 1000,
+  location: null,
 };
 
 describe("PostCard", () => {
