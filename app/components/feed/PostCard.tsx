@@ -1,8 +1,15 @@
 import type { FeedPost } from "../../models/feed";
+import { PostLocation } from "../location/PostLocation";
 
 interface PostCardProps {
   post: FeedPost;
 }
+
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
 
 export function PostCard({ post }: PostCardProps) {
   return (
@@ -16,10 +23,16 @@ export function PostCard({ post }: PostCardProps) {
       )}
       <div className="p-4 space-y-1.5">
         <h2 className="text-lg font-semibold">{post.title}</h2>
+        <PostLocation location={post.location} />
         <p className="text-sm text-gray-700 dark:text-gray-300">
           {post.description}
         </p>
-        <p className="text-xs text-gray-400">by {post.authorId}</p>
+        <p className="text-xs text-gray-400">
+          by {post.authorId} ·{" "}
+          <time dateTime={new Date(post.createdAt).toISOString()}>
+            {dateFormatter.format(post.createdAt)}
+          </time>
+        </p>
       </div>
     </article>
   );
