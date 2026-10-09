@@ -23,6 +23,18 @@ Open the link it gives to the website.
 Any data you post / accounts you create can be viewed
 in the links the emulator gives you.
 
+### Seeding test data
+
+The emulators need Java 21+ (`java -version`). With the emulators running,
+seed a test user and 15 feed posts (some with locations, some without):
+```
+npm run seed:emulator
+```
+
+Then log in at http://localhost:5173/login as `feedtester@wetravel.test` /
+`password123` and open `/feed`. Emulator data is wiped when the emulators
+stop, so re-run the seed after each restart (it is safe to run repeatedly).
+
 ## We Travel Structure
 
 After commits the main branch should look like the following tree.
