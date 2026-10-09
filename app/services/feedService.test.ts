@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   collection: vi.fn(),
-  getDocs: vi.fn(),
+  getDocsFromServer: vi.fn(),
   query: vi.fn(),
   orderBy: vi.fn(),
   limit: vi.fn(),
@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("firebase/firestore", () => ({
   collection: mocks.collection,
-  getDocs: mocks.getDocs,
+  getDocsFromServer: mocks.getDocsFromServer,
   query: mocks.query,
   orderBy: mocks.orderBy,
   limit: mocks.limit,
@@ -77,7 +77,7 @@ describe("getFirstFeedPage", () => {
   });
 
   it("returns posts newest-first with no cursor when they fit one page", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeRawPosts(5)));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot(makeRawPosts(5)));
     const page = await getFirstFeedPage();
     expect(page.posts).toHaveLength(5);
     for (let i = 1; i < page.posts.length; i++) {
@@ -87,14 +87,14 @@ describe("getFirstFeedPage", () => {
   });
 
   it("caps at PAGE_SIZE and sets a nextCursor when more exist", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeRawPosts(PAGE_SIZE + 1)));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot(makeRawPosts(PAGE_SIZE + 1)));
     const page = await getFirstFeedPage();
     expect(page.posts).toHaveLength(PAGE_SIZE);
     expect(page.nextCursor).not.toBeNull();
   });
 
   it("queries the posts collection ordered by createdAt desc", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeRawPosts(2)));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot(makeRawPosts(2)));
     await getFirstFeedPage();
     expect(mocks.collection).toHaveBeenCalledWith(mocks.db, "posts");
     expect(mocks.orderBy).toHaveBeenCalledWith("createdAt", "desc");
@@ -102,14 +102,14 @@ describe("getFirstFeedPage", () => {
   });
 
   it("returns an empty page when there are no posts", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot([]));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot([]));
     const page = await getFirstFeedPage();
     expect(page.posts).toEqual([]);
     expect(page.nextCursor).toBeNull();
   });
 
   it("converts Firestore Timestamps to epoch ms", async () => {
-    mocks.getDocs.mockResolvedValue(
+    mocks.getDocsFromServer.mockResolvedValue(
       fakeSnapshot([
         {
           id: "p1",
@@ -129,7 +129,7 @@ describe("getFirstFeedPage", () => {
 
   it("carries a post's location through to the feed", async () => {
     const location = { name: "Kyoto", latitude: 35.0116, longitude: 135.7681 };
-    mocks.getDocs.mockResolvedValue(
+    mocks.getDocsFromServer.mockResolvedValue(
       fakeSnapshot([{ ...makeRawPosts(1)[0], location }]),
     );
     const page = await getFirstFeedPage();
@@ -137,9 +137,16 @@ describe("getFirstFeedPage", () => {
   });
 
   it("sets location to null for posts without one", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeRawPosts(1)));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot(makeRawPosts(1)));
     const page = await getFirstFeedPage();
     expect(page.posts[0].location).toBeNull();
+  });
+
+  it("rejects instead of falling back to cache when the server is unreachable", async () => {
+    mocks.getDocsFromServer.mockRejectedValue(
+      Object.assign(new Error("Failed to get documents from server."), { code: "unavailable" }),
+    );
+    await expect(getFirstFeedPage()).rejects.toThrow("Failed to get documents from server.");
   });
 });
 
@@ -162,7 +169,7 @@ describe("getNextFeedPage", () => {
   });
 
   it("starts the query after the cursor's createdAt Timestamp", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeOlderPosts(2)));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot(makeOlderPosts(2)));
     await getNextFeedPage(CURSOR);
     expect(mocks.collection).toHaveBeenCalledWith(mocks.db, "posts");
     expect(mocks.orderBy).toHaveBeenCalledWith("createdAt", "desc");
@@ -172,7 +179,7 @@ describe("getNextFeedPage", () => {
   });
 
   it("returns older posts newest-first with no cursor when they fit one page", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeOlderPosts(4)));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot(makeOlderPosts(4)));
     const page = await getNextFeedPage(CURSOR);
     expect(page.posts).toHaveLength(4);
     for (const post of page.posts) {
@@ -185,21 +192,21 @@ describe("getNextFeedPage", () => {
   });
 
   it("caps at PAGE_SIZE and sets a nextCursor when more exist", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeOlderPosts(PAGE_SIZE + 1)));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot(makeOlderPosts(PAGE_SIZE + 1)));
     const page = await getNextFeedPage(CURSOR);
     expect(page.posts).toHaveLength(PAGE_SIZE);
     expect(page.nextCursor).toBe(page.posts[PAGE_SIZE - 1].createdAt);
   });
 
   it("returns an empty last page when nothing is older than the cursor", async () => {
-    mocks.getDocs.mockResolvedValue(fakeSnapshot([]));
+    mocks.getDocsFromServer.mockResolvedValue(fakeSnapshot([]));
     const page = await getNextFeedPage(CURSOR);
     expect(page.posts).toEqual([]);
     expect(page.nextCursor).toBeNull();
   });
 
   it("rejects when Firestore fails", async () => {
-    mocks.getDocs.mockRejectedValue(new Error("unavailable"));
+    mocks.getDocsFromServer.mockRejectedValue(new Error("unavailable"));
     await expect(getNextFeedPage(CURSOR)).rejects.toThrow("unavailable");
   });
 });

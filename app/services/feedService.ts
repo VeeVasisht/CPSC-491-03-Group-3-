@@ -1,6 +1,6 @@
 import {
   collection,
-  getDocs,
+  getDocsFromServer,
   limit,
   orderBy,
   query,
@@ -25,6 +25,10 @@ import {
  * extra doc (PAGE_SIZE + 1) so paginateFeed can tell whether a next page exists.
  * Firestore `Timestamp`s are converted to epoch ms at this boundary, then the
  * pure model logic handles slicing and the next-page cursor.
+ *
+ * Uses getDocsFromServer, not getDocs: when the server is unreachable getDocs
+ * silently resolves from the local cache, which hides offline errors from the
+ * feed (Refresh/Load more appear to succeed). This rejects instead.
  */
 async function fetchFeedPage(cursor: number | null): Promise<FeedPage> {
   const postsRef = collection(db, "posts");
@@ -34,7 +38,7 @@ async function fetchFeedPage(cursor: number | null): Promise<FeedPage> {
   }
   constraints.push(limit(PAGE_SIZE + 1));
 
-  const snapshot = await getDocs(query(postsRef, ...constraints));
+  const snapshot = await getDocsFromServer(query(postsRef, ...constraints));
 
   const posts = snapshot.docs.map((docSnap) => {
     const data = docSnap.data();
