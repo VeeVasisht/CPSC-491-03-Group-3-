@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { getFirstFeedPage } from "../../services/feedService";
-import type { FeedPost } from "../../models/feed";
+import { getFirstFeedPage, getNextFeedPage } from "../../services/feedService";
+import { isLastPage, type FeedPage, type FeedPost } from "../../models/feed";
 import { PostCard } from "./PostCard";
 
 type FeedStatus = "loading" | "error" | "ready";
@@ -8,6 +8,10 @@ type FeedStatus = "loading" | "error" | "ready";
 export function Feed() {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [status, setStatus] = useState<FeedStatus>("loading");
+  // Most recently fetched page; its nextCursor drives "Load more".
+  const [lastPage, setLastPage] = useState<FeedPage | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -19,13 +23,35 @@ export function Feed() {
 
   async function loadFirstPage() {
     setStatus("loading");
+    setActionError(null);
     try {
       const page = await getFirstFeedPage();
       if (!isMounted.current) return;
       setPosts(page.posts);
+      setLastPage(page);
       setStatus("ready");
     } catch {
       if (isMounted.current) setStatus("error");
+    }
+  }
+
+  async function loadMore() {
+    const cursor = lastPage?.nextCursor;
+    if (cursor == null || loadingMore) return;
+
+    setLoadingMore(true);
+    setActionError(null);
+    try {
+      const page = await getNextFeedPage(cursor);
+      if (!isMounted.current) return;
+      setPosts((prev) => [...prev, ...page.posts]);
+      setLastPage(page);
+    } catch {
+      if (isMounted.current) {
+        setActionError("Couldn't load more posts. Please try again.");
+      }
+    } finally {
+      if (isMounted.current) setLoadingMore(false);
     }
   }
 
@@ -69,6 +95,33 @@ export function Feed() {
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
+
+      {actionError && (
+        <p role="alert" className="text-sm text-red-600">
+          {actionError}
+        </p>
+      )}
+
+      {status === "ready" && posts.length > 0 && lastPage && (
+        isLastPage(lastPage) ? (
+          <p className="text-center text-sm text-gray-500">
+            You're all caught up
+          </p>
+        ) : (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              disabled={loadingMore}
+              onClick={() => {
+                void loadMore();
+              }}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium disabled:opacity-50 dark:border-gray-700"
+            >
+              {loadingMore ? "Loading more..." : "Load more"}
+            </button>
+          </div>
+        )
+      )}
     </main>
   );
 }

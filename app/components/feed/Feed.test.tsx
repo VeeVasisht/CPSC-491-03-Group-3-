@@ -80,4 +80,61 @@ describe("Feed", () => {
     expect(await screen.findByText(/No posts yet/)).toBeTruthy();
     expect(screen.queryByRole("article")).toBeNull();
   });
+
+  it("Load more fetches the next page with the cursor and appends posts", async () => {
+    mocks.getFirstFeedPage.mockResolvedValue({ posts: [makePost(1), makePost(2)], nextCursor: 998 });
+    mocks.getNextFeedPage.mockResolvedValue({ posts: [makePost(3), makePost(4)], nextCursor: 996 });
+
+    render(<Feed />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
+
+    expect(await screen.findByText("Post 4")).toBeTruthy();
+    expect(mocks.getNextFeedPage).toHaveBeenCalledWith(998);
+    expect(screen.getAllByRole("article").map((a) => a.querySelector("h2")?.textContent)).toEqual([
+      "Post 1",
+      "Post 2",
+      "Post 3",
+      "Post 4",
+    ]);
+  });
+
+  it("shows the end-of-feed message instead of Load more on the last page", async () => {
+    mocks.getFirstFeedPage.mockResolvedValue({ posts: [makePost(1)], nextCursor: 999 });
+    mocks.getNextFeedPage.mockResolvedValue({ posts: [makePost(2)], nextCursor: null });
+
+    render(<Feed />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
+
+    expect(await screen.findByText("You're all caught up")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+  });
+
+  it("shows the end-of-feed message when the first page is the last", async () => {
+    mocks.getFirstFeedPage.mockResolvedValue({ posts: [makePost(1)], nextCursor: null });
+
+    render(<Feed />);
+
+    expect(await screen.findByText("You're all caught up")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+  });
+
+  it("shows an error when Load more fails without wiping loaded posts", async () => {
+    mocks.getFirstFeedPage.mockResolvedValue({ posts: [makePost(1), makePost(2)], nextCursor: 998 });
+    mocks.getNextFeedPage.mockRejectedValue(new Error("offline"));
+
+    render(<Feed />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
+
+    expect(await screen.findByText(/Couldn't load more posts/)).toBeTruthy();
+    expect(screen.getByText("Post 1")).toBeTruthy();
+    expect(screen.getByText("Post 2")).toBeTruthy();
+    await waitFor(() => {
+      expect(
+        (screen.getByRole("button", { name: "Load more" }) as HTMLButtonElement).disabled,
+      ).toBe(false);
+    });
+  });
 });
