@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   query: vi.fn(),
   orderBy: vi.fn(),
   limit: vi.fn(),
+  startAfter: vi.fn(),
+  fromMillis: vi.fn(),
   db: { name: "mock-db" },
 }));
 
@@ -15,11 +17,13 @@ vi.mock("firebase/firestore", () => ({
   query: mocks.query,
   orderBy: mocks.orderBy,
   limit: mocks.limit,
+  startAfter: mocks.startAfter,
+  Timestamp: { fromMillis: mocks.fromMillis },
 }));
 
 vi.mock("../firebase/firebase", () => ({ db: mocks.db }));
 
-import { getFirstFeedPage } from "./feedService";
+import { getFirstFeedPage, getNextFeedPage } from "./feedService";
 import { PAGE_SIZE } from "../models/feed";
 import type { Geotag } from "../models/geotag";
 
@@ -69,6 +73,7 @@ describe("getFirstFeedPage", () => {
     mocks.query.mockReturnValue({});
     mocks.orderBy.mockReturnValue({});
     mocks.limit.mockReturnValue({});
+    mocks.startAfter.mockReturnValue({});
   });
 
   it("returns posts newest-first with no cursor when they fit one page", async () => {
@@ -93,6 +98,7 @@ describe("getFirstFeedPage", () => {
     await getFirstFeedPage();
     expect(mocks.collection).toHaveBeenCalledWith(mocks.db, "posts");
     expect(mocks.orderBy).toHaveBeenCalledWith("createdAt", "desc");
+    expect(mocks.startAfter).not.toHaveBeenCalled();
   });
 
   it("returns an empty page when there are no posts", async () => {
@@ -134,5 +140,66 @@ describe("getFirstFeedPage", () => {
     mocks.getDocs.mockResolvedValue(fakeSnapshot(makeRawPosts(1)));
     const page = await getFirstFeedPage();
     expect(page.posts[0].location).toBeNull();
+  });
+});
+
+describe("getNextFeedPage", () => {
+  const CURSOR = 5000;
+
+  /** `count` posts all older than CURSOR, newest first. */
+  function makeOlderPosts(count: number): FakePost[] {
+    return makeRawPosts(count).map((p, i) => ({ ...p, createdAt: CURSOR - 1 - i }));
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.collection.mockReturnValue({});
+    mocks.query.mockReturnValue({});
+    mocks.orderBy.mockReturnValue({});
+    mocks.limit.mockReturnValue({});
+    mocks.startAfter.mockReturnValue({});
+    mocks.fromMillis.mockImplementation((ms: number) => ({ ms }));
+  });
+
+  it("starts the query after the cursor's createdAt Timestamp", async () => {
+    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeOlderPosts(2)));
+    await getNextFeedPage(CURSOR);
+    expect(mocks.collection).toHaveBeenCalledWith(mocks.db, "posts");
+    expect(mocks.orderBy).toHaveBeenCalledWith("createdAt", "desc");
+    expect(mocks.fromMillis).toHaveBeenCalledWith(CURSOR);
+    expect(mocks.startAfter).toHaveBeenCalledWith({ ms: CURSOR });
+    expect(mocks.limit).toHaveBeenCalledWith(PAGE_SIZE + 1);
+  });
+
+  it("returns older posts newest-first with no cursor when they fit one page", async () => {
+    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeOlderPosts(4)));
+    const page = await getNextFeedPage(CURSOR);
+    expect(page.posts).toHaveLength(4);
+    for (const post of page.posts) {
+      expect(post.createdAt).toBeLessThan(CURSOR);
+    }
+    for (let i = 1; i < page.posts.length; i++) {
+      expect(page.posts[i].createdAt).toBeLessThan(page.posts[i - 1].createdAt);
+    }
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it("caps at PAGE_SIZE and sets a nextCursor when more exist", async () => {
+    mocks.getDocs.mockResolvedValue(fakeSnapshot(makeOlderPosts(PAGE_SIZE + 1)));
+    const page = await getNextFeedPage(CURSOR);
+    expect(page.posts).toHaveLength(PAGE_SIZE);
+    expect(page.nextCursor).toBe(page.posts[PAGE_SIZE - 1].createdAt);
+  });
+
+  it("returns an empty last page when nothing is older than the cursor", async () => {
+    mocks.getDocs.mockResolvedValue(fakeSnapshot([]));
+    const page = await getNextFeedPage(CURSOR);
+    expect(page.posts).toEqual([]);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it("rejects when Firestore fails", async () => {
+    mocks.getDocs.mockRejectedValue(new Error("unavailable"));
+    await expect(getNextFeedPage(CURSOR)).rejects.toThrow("unavailable");
   });
 });
