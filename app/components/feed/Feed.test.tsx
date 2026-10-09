@@ -28,6 +28,11 @@ function makePost(i: number): FeedPost {
   };
 }
 
+/** True when `a` comes before `b` in document order. */
+function isBefore(a: Element, b: Element): boolean {
+  return Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+}
+
 describe("Feed", () => {
   afterEach(() => {
     cleanup();
@@ -120,7 +125,7 @@ describe("Feed", () => {
     expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
   });
 
-  it("shows an error when Load more fails without wiping loaded posts", async () => {
+  it("shows the Load more error below the posts without wiping them", async () => {
     mocks.getFirstFeedPage.mockResolvedValue({ posts: [makePost(1), makePost(2)], nextCursor: 998 });
     mocks.getNextFeedPage.mockRejectedValue(new Error("offline"));
 
@@ -128,9 +133,12 @@ describe("Feed", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
 
-    expect(await screen.findByText(/Couldn't load more posts/)).toBeTruthy();
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toMatch(/Couldn't load more posts/);
     expect(screen.getByText("Post 1")).toBeTruthy();
     expect(screen.getByText("Post 2")).toBeTruthy();
+    const articles = screen.getAllByRole("article");
+    expect(isBefore(articles[articles.length - 1], alert)).toBe(true);
     await waitFor(() => {
       expect(
         (screen.getByRole("button", { name: "Load more" }) as HTMLButtonElement).disabled,
@@ -161,7 +169,7 @@ describe("Feed", () => {
     expect(screen.getAllByRole("article")).toHaveLength(2);
   });
 
-  it("shows an error when Refresh fails without wiping loaded posts", async () => {
+  it("shows the Refresh error above the posts without wiping them", async () => {
     mocks.getFirstFeedPage
       .mockResolvedValueOnce({ posts: [makePost(1)], nextCursor: null })
       .mockRejectedValueOnce(new Error("offline"));
@@ -170,7 +178,10 @@ describe("Feed", () => {
 
     fireEvent.click(await screen.findByRole("button", { name: "Refresh" }));
 
-    expect(await screen.findByText(/Couldn't refresh the feed/)).toBeTruthy();
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toMatch(/Couldn't refresh the feed/);
     expect(screen.getByText("Post 1")).toBeTruthy();
+    expect(isBefore(alert, screen.getAllByRole("article")[0])).toBe(true);
+    expect(isBefore(screen.getByRole("button", { name: "Refresh" }), alert)).toBe(true);
   });
 });

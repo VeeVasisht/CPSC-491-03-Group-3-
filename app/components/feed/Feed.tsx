@@ -12,7 +12,9 @@ export function Feed() {
   const [lastPage, setLastPage] = useState<FeedPage | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+  // Shown next to the control that failed: top for Refresh, bottom for Load more.
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -24,7 +26,8 @@ export function Feed() {
 
   async function loadFirstPage() {
     setStatus("loading");
-    setActionError(null);
+    setRefreshError(null);
+    setLoadMoreError(null);
     try {
       const page = await getFirstFeedPage();
       if (!isMounted.current) return;
@@ -41,15 +44,16 @@ export function Feed() {
     if (refreshing || loadingMore) return;
 
     setRefreshing(true);
-    setActionError(null);
+    setRefreshError(null);
     try {
       const page = await getFirstFeedPage();
       if (!isMounted.current) return;
       setPosts(page.posts);
       setLastPage(page);
+      setLoadMoreError(null);
     } catch {
       if (isMounted.current) {
-        setActionError("Couldn't refresh the feed. Please try again.");
+        setRefreshError("Couldn't refresh the feed. Please try again.");
       }
     } finally {
       if (isMounted.current) setRefreshing(false);
@@ -61,7 +65,7 @@ export function Feed() {
     if (cursor == null || loadingMore || refreshing) return;
 
     setLoadingMore(true);
-    setActionError(null);
+    setLoadMoreError(null);
     try {
       const page = await getNextFeedPage(cursor);
       if (!isMounted.current) return;
@@ -69,7 +73,7 @@ export function Feed() {
       setLastPage(page);
     } catch {
       if (isMounted.current) {
-        setActionError("Couldn't load more posts. Please try again.");
+        setLoadMoreError("Couldn't load more posts. Please try again.");
       }
     } finally {
       if (isMounted.current) setLoadingMore(false);
@@ -99,6 +103,12 @@ export function Feed() {
       {refreshing && (
         <p role="status" className="text-sm text-gray-500">
           Refreshing...
+        </p>
+      )}
+
+      {refreshError && (
+        <p role="alert" className="text-sm text-red-600">
+          {refreshError}
         </p>
       )}
 
@@ -135,19 +145,18 @@ export function Feed() {
         <PostCard key={post.id} post={post} />
       ))}
 
-      {actionError && (
-        <p role="alert" className="text-sm text-red-600">
-          {actionError}
-        </p>
-      )}
-
       {status === "ready" && posts.length > 0 && lastPage && (
         isLastPage(lastPage) ? (
           <p className="text-center text-sm text-gray-500">
             You're all caught up
           </p>
         ) : (
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
+            {loadMoreError && (
+              <p role="alert" className="text-sm text-red-600">
+                {loadMoreError}
+              </p>
+            )}
             <button
               type="button"
               disabled={loadingMore || refreshing}
