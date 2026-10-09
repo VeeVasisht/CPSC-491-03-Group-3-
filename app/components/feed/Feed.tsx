@@ -85,7 +85,8 @@ export function Feed() {
   }, []);
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+    // pb-16 keeps the end of the feed clear of fixed bottom banners (e.g. the emulator warning).
+    <main className="max-w-2xl mx-auto px-4 pt-6 pb-16 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Feed</h1>
         <button
@@ -147,7 +148,7 @@ export function Feed() {
 
       {status === "ready" && posts.length > 0 && lastPage && (
         isLastPage(lastPage) ? (
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm font-medium text-gray-700 dark:text-gray-200">
             You're all caught up
           </p>
         ) : (
