@@ -33,13 +33,16 @@ After commits the main branch should look like the following tree.
 
 ```text
 .github/workflows/
+│   ├── build-main.yml
 │   ├── ci.yml
+│   ├── firebase-hosting-merge.yml
+│   └── firebase-hosting-pull-request.yml
 app/
 │   ├── account_settings/
 │   │   ├── AccountSettings.test.tsx
 │   │   ├── AccountSettings.tsx
 │   │   ├── ForgotPassword.test.tsx
-│   │   ├── ForgotPassword.tsx
+│   │   └── ForgotPassword.tsx
 │   ├── components/
 │   │   ├── auth/
 │   │   │   ├── PublicOnly.tsx
@@ -74,6 +77,8 @@ app/
 │   ├── models/
 │   │   ├── comment.test.ts
 │   │   ├── comment.ts
+│   │   ├── feed.test.ts
+│   │   ├── feed.ts
 │   │   ├── forgetPassword.test.ts
 │   │   ├── forgetPassword.ts
 │   │   ├── geotag.test.ts
@@ -95,6 +100,8 @@ app/
 │   │   ├── profile.tsx
 │   │   └── registration.tsx
 │   ├── services/
+│   │   ├── feedService.test.ts
+│   │   ├── feedService.ts
 │   │   ├── postLocationService.test.ts
 │   │   ├── postLocationService.ts
 │   │   ├── profileService.test.ts
@@ -122,11 +129,6 @@ app/
 │   └── FormMessage.jsx
 ├── docs/
 │   └──sprint1-navigation-session.md
-├── pages/
-│   ├── AccountSettings.jsx
-│   ├── AccountSettings.test.jsx
-│   ├── ForgetPassword.jsx
-│   └── ForgetPassword.test.jsx
 ├── public/
 │   └── favicon.ico
 ├── .dockerignore
