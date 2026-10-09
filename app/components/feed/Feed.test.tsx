@@ -137,4 +137,40 @@ describe("Feed", () => {
       ).toBe(false);
     });
   });
+
+  it("Refresh keeps existing posts visible while it loads, then shows the new page", async () => {
+    let resolveRefresh!: (page: { posts: FeedPost[]; nextCursor: number | null }) => void;
+    mocks.getFirstFeedPage
+      .mockResolvedValueOnce({ posts: [makePost(1)], nextCursor: null })
+      .mockReturnValueOnce(new Promise((resolve) => {
+        resolveRefresh = resolve;
+      }));
+
+    render(<Feed />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Refresh" }));
+
+    expect(await screen.findByText("Refreshing...")).toBeTruthy();
+    expect(screen.getByText("Post 1")).toBeTruthy();
+    expect(screen.queryByText("Loading posts...")).toBeNull();
+
+    resolveRefresh({ posts: [makePost(0), makePost(1)], nextCursor: null });
+
+    expect(await screen.findByText("Post 0")).toBeTruthy();
+    expect(screen.queryByText("Refreshing...")).toBeNull();
+    expect(screen.getAllByRole("article")).toHaveLength(2);
+  });
+
+  it("shows an error when Refresh fails without wiping loaded posts", async () => {
+    mocks.getFirstFeedPage
+      .mockResolvedValueOnce({ posts: [makePost(1)], nextCursor: null })
+      .mockRejectedValueOnce(new Error("offline"));
+
+    render(<Feed />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Refresh" }));
+
+    expect(await screen.findByText(/Couldn't refresh the feed/)).toBeTruthy();
+    expect(screen.getByText("Post 1")).toBeTruthy();
+  });
 });

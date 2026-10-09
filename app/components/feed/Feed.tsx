@@ -11,6 +11,7 @@ export function Feed() {
   // Most recently fetched page; its nextCursor drives "Load more".
   const [lastPage, setLastPage] = useState<FeedPage | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const isMounted = useRef(true);
 
@@ -35,9 +36,29 @@ export function Feed() {
     }
   }
 
+  // Refetch the first page while keeping the current posts on screen.
+  async function refresh() {
+    if (refreshing || loadingMore) return;
+
+    setRefreshing(true);
+    setActionError(null);
+    try {
+      const page = await getFirstFeedPage();
+      if (!isMounted.current) return;
+      setPosts(page.posts);
+      setLastPage(page);
+    } catch {
+      if (isMounted.current) {
+        setActionError("Couldn't refresh the feed. Please try again.");
+      }
+    } finally {
+      if (isMounted.current) setRefreshing(false);
+    }
+  }
+
   async function loadMore() {
     const cursor = lastPage?.nextCursor;
-    if (cursor == null || loadingMore) return;
+    if (cursor == null || loadingMore || refreshing) return;
 
     setLoadingMore(true);
     setActionError(null);
@@ -61,7 +82,25 @@ export function Feed() {
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-      <h1 className="text-2xl font-bold">Feed</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Feed</h1>
+        <button
+          type="button"
+          disabled={status !== "ready" || refreshing || loadingMore}
+          onClick={() => {
+            void refresh();
+          }}
+          className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-gray-700"
+        >
+          Refresh
+        </button>
+      </div>
+
+      {refreshing && (
+        <p role="status" className="text-sm text-gray-500">
+          Refreshing...
+        </p>
+      )}
 
       {status === "loading" && (
         <p role="status" className="text-sm text-gray-500">
@@ -111,7 +150,7 @@ export function Feed() {
           <div className="flex justify-center">
             <button
               type="button"
-              disabled={loadingMore}
+              disabled={loadingMore || refreshing}
               onClick={() => {
                 void loadMore();
               }}
