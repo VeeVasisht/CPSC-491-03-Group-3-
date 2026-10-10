@@ -2,7 +2,11 @@
 
 All code work for Senior CapStone Project
 
-## Directions for running
+## Automatic Deployment
+Once a PR is merged into main, the production build is updated and
+deployed to this website: [wetravel-569a0.web.app](wetravel-569a0.web.app)
+
+## Directions for Running the Dev Build
 
 Make sure firebase-tools is installed:
 ```
