@@ -9,3 +9,6 @@
 # Firestore Logs
 firestore-debug.log
 firebase-debug.log
+
+# Emulator UI logs
+ui-debug.log
