@@ -1,37 +1,44 @@
-// app/services/locationFeedService.ts
-
-import { collection, getDocs, query, where, orderBy } from "firebase/firestore";
+import { collection, getDocsFromServer, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import {
   filterPostsByLocation,
   type LocationFeedFilter,
   type LocationFeedPost,
 } from "../models/locationFeed";
+import { validateGeotag, normalizeGeotag } from "../models/geotag";
 
 /**
- * Retrieves geotagged posts and applies location and proximity filters.
+ * Retrieves geotagged posts from the server and applies location and proximity filters.
  */
 export async function getLocationFeed(
   filter: LocationFeedFilter,
 ): Promise<LocationFeedPost[]> {
   try {
     const postsRef = collection(db, "posts");
-    // Fetch posts where location field is attached
+    // Fetch posts where location field is attached using server fetch
     const q = query(postsRef, where("location", "!=", null));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocsFromServer(q);
 
-    const rawPosts: LocationFeedPost[] = snapshot.docs.map((docSnap) => {
+    const rawPosts: LocationFeedPost[] = [];
+
+    for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        authorId: data.authorId ?? "",
-        title: data.title ?? "",
-        description: data.description ?? "",
-        imageUrl: data.imageUrl ?? "",
-        location: data.location,
-        createdAt: data.createdAt?.toMillis?.() ?? Date.now(),
-      };
-    });
+      if (data.location) {
+        // Validate geotag coordinates and structure
+        const validation = validateGeotag(data.location);
+        if (validation.valid) {
+          rawPosts.push({
+            id: docSnap.id,
+            authorId: data.authorId ?? "",
+            title: data.title ?? "",
+            description: data.description ?? "",
+            imageUrl: data.imageUrl ?? "",
+            location: normalizeGeotag(data.location),
+            createdAt: data.createdAt?.toMillis?.() ?? Date.now(),
+          });
+        }
+      }
+    }
 
     // Apply distance/region filter and sort newest-first
     const filtered = filterPostsByLocation(rawPosts, filter);

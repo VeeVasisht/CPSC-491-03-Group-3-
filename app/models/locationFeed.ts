@@ -54,15 +54,29 @@ export function filterPostsByLocation(
     // Filter by Region Name query
     if (filter.regionName && filter.regionName.trim() !== "") {
       const query = filter.regionName.trim().toLowerCase();
-      const matchesName = post.location.name.toLowerCase().includes(query);
-      if (!matchesName) return false;
+      const locationName =
+        typeof post.location.name === "string"
+        ? post.location.name.trim().toLowerCase()
+        : "";
+
+      if (!locationName || !locationName.includes(query)) {
+        return false;
+      }
     }
 
-    // Filter by Latitude/Longitude radius
+    // Filter by Latitude/Longitude radius with Number.isFinite & non-negative radius checks
     if (
       typeof filter.latitude === "number" &&
+      Number.isFinite(filter.latitude) &&
       typeof filter.longitude === "number" &&
-      typeof filter.radiusKm === "number"
+      Number.isFinite(filter.longitude) &&
+      typeof filter.radiusKm === "number" &&
+      Number.isFinite(filter.radiusKm) &&
+      filter.radiusKm >= 0 &&
+      typeof post.location.latitude === "number" &&
+      Number.isFinite(filter.post.location.latitude) &&
+      typeof post.location.longitude === "number" &&
+      Number.isFinite(filter.post.location.longitude)
     ) {
       const distance = calculateHaversineDistanceKm(
         filter.latitude,
