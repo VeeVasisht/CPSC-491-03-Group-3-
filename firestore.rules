@@ -26,8 +26,9 @@ service cloud.firestore {
 
     match /users/{userId} {
 
-      // Read only your own profile.
-      allow read: if isOwner(userId);
+      // Any signed-in user can read profiles: the feed shows each post's
+      // author displayName. Writes below stay owner-only.
+      allow read: if isSignedIn();
 
       // Create your own profile: exactly the 4 expected fields, valid
       // lengths, and server timestamps.

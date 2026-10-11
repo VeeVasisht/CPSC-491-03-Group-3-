@@ -13,6 +13,8 @@
  * single source of truth and add a toFeedPost(post: Post) boundary mapper.
  */
 
+import { normalizeGeotag, validateGeotag, type Geotag } from "./geotag";
+
 export const PAGE_SIZE = 10;
 
 /** Pagination view of a Post — same fields, timestamps as epoch ms. */
@@ -24,6 +26,7 @@ export interface FeedPost {
   imageUrl: string;
   createdAt: number; // epoch ms — ordering + page cursor
   updatedAt: number; // epoch ms
+  location: Geotag | null; // null when the post has no (valid) location
 }
 
 /** One page of feed results plus the cursor for the next (older) page. */
@@ -41,10 +44,30 @@ export interface RawFeedPost {
   imageUrl?: string | null;
   createdAt: number;
   updatedAt?: number | null;
+  location?: unknown;
 }
 
 /**
- * Clean a raw record into a FeedPost. Trims text fields; throws if a required
+ * Keep a stored location only if it is a well-formed Geotag; anything else
+ * (missing, null, malformed) becomes null so the post still renders.
+ */
+function toFeedLocation(raw: unknown): Geotag | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { name, latitude, longitude } = raw as Record<string, unknown>;
+  if (
+    typeof name !== "string" ||
+    typeof latitude !== "number" ||
+    typeof longitude !== "number"
+  ) {
+    return null;
+  }
+  const geotag: Geotag = { name, latitude, longitude };
+  return validateGeotag(geotag).valid ? normalizeGeotag(geotag) : null;
+}
+
+/**
+ * Clean a raw record into a FeedPost. Trims text fields and drops an invalid
+ * location (to null); throws if a required
  * field (id, authorId, createdAt) is missing — the service treats a throw as a
  * retrieval failure.
  */
@@ -60,6 +83,7 @@ export function normalizePost(raw: RawFeedPost): FeedPost {
     imageUrl: (raw.imageUrl ?? "").trim(),
     createdAt: raw.createdAt,
     updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : raw.createdAt,
+    location: toFeedLocation(raw.location),
   };
 }
 

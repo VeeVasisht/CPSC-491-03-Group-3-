@@ -8,7 +8,8 @@
     "dev:firebase": "react-router dev",
     "typecheck": "react-router typegen && tsc",
     "test": "vitest",
-    "test:smoke": "vitest run tests/smoke --config vitest.smoke.config.ts"
+    "test:smoke": "vitest run tests/smoke --config vitest.smoke.config.ts",
+    "seed:emulator": "node scripts/seed-emulator.mjs"
   },
   "dependencies": {
     "@firebase-oss/ui-react": "^7.0.3",
