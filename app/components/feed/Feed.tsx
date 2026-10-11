@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { getFirstFeedPage, getNextFeedPage } from "../../services/feedService";
+import { getAuthorNames, UNKNOWN_AUTHOR } from "../../services/authorService";
 import { isLastPage, type FeedPage, type FeedPost } from "../../models/feed";
 import { PostCard } from "./PostCard";
 
@@ -15,6 +16,10 @@ export function Feed() {
   // Shown next to the control that failed: top for Refresh, bottom for Load more.
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  // authorId -> displayName for every author we've resolved so far.
+  const [authorNames, setAuthorNames] = useState<Map<string, string>>(new Map());
+  // Authors already looked up (found or not), so each is fetched only once.
+  const lookedUpAuthors = useRef(new Set<string>());
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -24,12 +29,34 @@ export function Feed() {
     };
   }, []);
 
+  /**
+   * Batch-load display names for any authors on these posts we haven't looked
+   * up yet. Never throws: names are cosmetic, so a failed lookup leaves those
+   * authors as UNKNOWN_AUTHOR (and retries them with the next page) rather
+   * than failing the feed.
+   */
+  async function resolveAuthors(newPosts: FeedPost[]) {
+    const ids = [...new Set(newPosts.map((p) => p.authorId))].filter(
+      (id) => !lookedUpAuthors.current.has(id),
+    );
+    if (ids.length === 0) return;
+    try {
+      const found = await getAuthorNames(ids);
+      ids.forEach((id) => lookedUpAuthors.current.add(id));
+      if (!isMounted.current) return;
+      setAuthorNames((prev) => new Map([...prev, ...found]));
+    } catch {
+      // Leave unresolved; rendered as UNKNOWN_AUTHOR.
+    }
+  }
+
   async function loadFirstPage() {
     setStatus("loading");
     setRefreshError(null);
     setLoadMoreError(null);
     try {
       const page = await getFirstFeedPage();
+      await resolveAuthors(page.posts);
       if (!isMounted.current) return;
       setPosts(page.posts);
       setLastPage(page);
@@ -47,6 +74,7 @@ export function Feed() {
     setRefreshError(null);
     try {
       const page = await getFirstFeedPage();
+      await resolveAuthors(page.posts);
       if (!isMounted.current) return;
       setPosts(page.posts);
       setLastPage(page);
@@ -68,6 +96,7 @@ export function Feed() {
     setLoadMoreError(null);
     try {
       const page = await getNextFeedPage(cursor);
+      await resolveAuthors(page.posts);
       if (!isMounted.current) return;
       setPosts((prev) => [...prev, ...page.posts]);
       setLastPage(page);
@@ -143,7 +172,11 @@ export function Feed() {
       )}
 
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard
+          key={post.id}
+          post={post}
+          authorName={authorNames.get(post.authorId) ?? UNKNOWN_AUTHOR}
+        />
       ))}
 
       {status === "ready" && posts.length > 0 && lastPage && (

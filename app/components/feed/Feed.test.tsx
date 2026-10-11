@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { render, screen, cleanup, fireEvent, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FeedPost } from "../../models/feed";
 
 const mocks = vi.hoisted(() => ({
   getFirstFeedPage: vi.fn(),
   getNextFeedPage: vi.fn(),
+  getAuthorNames: vi.fn(),
 }));
 
 vi.mock("../../services/feedService", () => ({
@@ -13,12 +14,17 @@ vi.mock("../../services/feedService", () => ({
   getNextFeedPage: mocks.getNextFeedPage,
 }));
 
+vi.mock("../../services/authorService", () => ({
+  getAuthorNames: mocks.getAuthorNames,
+  UNKNOWN_AUTHOR: "Unknown traveler",
+}));
+
 import { Feed } from "./Feed";
 
-function makePost(i: number): FeedPost {
+function makePost(i: number, authorId = `user-${i}`): FeedPost {
   return {
     id: `post-${i}`,
-    authorId: `user-${i}`,
+    authorId,
     title: `Post ${i}`,
     description: `Description ${i}`,
     imageUrl: "",
@@ -34,6 +40,10 @@ function isBefore(a: Element, b: Element): boolean {
 }
 
 describe("Feed", () => {
+  beforeEach(() => {
+    mocks.getAuthorNames.mockResolvedValue(new Map());
+  });
+
   afterEach(() => {
     cleanup();
     vi.resetAllMocks();
@@ -183,5 +193,94 @@ describe("Feed", () => {
     expect(screen.getByText("Post 1")).toBeTruthy();
     expect(isBefore(alert, screen.getAllByRole("article")[0])).toBe(true);
     expect(isBefore(screen.getByRole("button", { name: "Refresh" }), alert)).toBe(true);
+  });
+
+  describe("author names", () => {
+    /** The "by …" line of the card titled `title`. */
+    function bylineOf(title: string): string {
+      const card = screen.getByText(title).closest("article") as HTMLElement;
+      return card.querySelector("p.text-xs")?.textContent ?? "";
+    }
+
+    it("shows each author's displayName on their cards", async () => {
+      mocks.getFirstFeedPage.mockResolvedValue({
+        posts: [makePost(1, "u-alice"), makePost(2, "u-bob")],
+        nextCursor: null,
+      });
+      mocks.getAuthorNames.mockResolvedValue(new Map([["u-alice", "Alice"], ["u-bob", "Bob"]]));
+
+      render(<Feed />);
+
+      await screen.findByText("Post 1");
+      expect(bylineOf("Post 1")).toMatch(/^by Alice/);
+      expect(bylineOf("Post 2")).toMatch(/^by Bob/);
+    });
+
+    it("shows 'Unknown traveler' when an author has no user doc or displayName", async () => {
+      mocks.getFirstFeedPage.mockResolvedValue({
+        posts: [makePost(1, "u-alice"), makePost(2, "u-ghost")],
+        nextCursor: null,
+      });
+      mocks.getAuthorNames.mockResolvedValue(new Map([["u-alice", "Alice"]]));
+
+      render(<Feed />);
+
+      await screen.findByText("Post 2");
+      expect(bylineOf("Post 1")).toMatch(/^by Alice/);
+      expect(bylineOf("Post 2")).toMatch(/^by Unknown traveler/);
+      expect(screen.queryByText(/u-ghost/)).toBeNull();
+    });
+
+    it("looks up duplicate authors once, in a single batch for the page", async () => {
+      mocks.getFirstFeedPage.mockResolvedValue({
+        posts: [makePost(1, "u-alice"), makePost(2, "u-bob"), makePost(3, "u-alice"), makePost(4, "u-alice")],
+        nextCursor: null,
+      });
+      mocks.getAuthorNames.mockResolvedValue(new Map([["u-alice", "Alice"], ["u-bob", "Bob"]]));
+
+      render(<Feed />);
+
+      await screen.findByText("Post 4");
+      expect(mocks.getAuthorNames).toHaveBeenCalledTimes(1);
+      expect(mocks.getAuthorNames).toHaveBeenCalledWith(["u-alice", "u-bob"]);
+      expect(bylineOf("Post 3")).toMatch(/^by Alice/);
+      expect(bylineOf("Post 4")).toMatch(/^by Alice/);
+    });
+
+    it("Load more only looks up authors that weren't on earlier pages", async () => {
+      mocks.getFirstFeedPage.mockResolvedValue({
+        posts: [makePost(1, "u-alice"), makePost(2, "u-ghost")],
+        nextCursor: 998,
+      });
+      mocks.getNextFeedPage.mockResolvedValue({
+        posts: [makePost(3, "u-alice"), makePost(4, "u-ghost"), makePost(5, "u-carol")],
+        nextCursor: null,
+      });
+      mocks.getAuthorNames
+        .mockResolvedValueOnce(new Map([["u-alice", "Alice"]]))
+        .mockResolvedValueOnce(new Map([["u-carol", "Carol"]]));
+
+      render(<Feed />);
+      fireEvent.click(await screen.findByRole("button", { name: "Load more" }));
+      await screen.findByText("Post 5");
+
+      expect(mocks.getAuthorNames).toHaveBeenCalledTimes(2);
+      expect(mocks.getAuthorNames).toHaveBeenNthCalledWith(1, ["u-alice", "u-ghost"]);
+      expect(mocks.getAuthorNames).toHaveBeenNthCalledWith(2, ["u-carol"]);
+      expect(bylineOf("Post 3")).toMatch(/^by Alice/);
+      expect(bylineOf("Post 4")).toMatch(/^by Unknown traveler/);
+      expect(bylineOf("Post 5")).toMatch(/^by Carol/);
+    });
+
+    it("still shows the feed with 'Unknown traveler' if the name lookup fails", async () => {
+      mocks.getFirstFeedPage.mockResolvedValue({ posts: [makePost(1, "u-alice")], nextCursor: null });
+      mocks.getAuthorNames.mockRejectedValue(new Error("permission-denied"));
+
+      render(<Feed />);
+
+      await screen.findByText("Post 1");
+      expect(bylineOf("Post 1")).toMatch(/^by Unknown traveler/);
+      expect(screen.queryByRole("alert")).toBeNull();
+    });
   });
 });

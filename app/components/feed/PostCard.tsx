@@ -3,6 +3,7 @@ import { PostLocation } from "../location/PostLocation";
 
 interface PostCardProps {
   post: FeedPost;
+  authorName: string; // resolved by the caller; see services/authorService
 }
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
@@ -11,7 +12,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, authorName }: PostCardProps) {
   return (
     <article className="rounded-xl border border-gray-200 overflow-hidden bg-white dark:border-gray-800 dark:bg-gray-900">
       {post.imageUrl && (
@@ -28,7 +29,7 @@ export function PostCard({ post }: PostCardProps) {
           {post.description}
         </p>
         <p className="text-xs text-gray-400">
-          by {post.authorId} ·{" "}
+          by {authorName} ·{" "}
           <time dateTime={new Date(post.createdAt).toISOString()}>
             {dateFormatter.format(post.createdAt)}
           </time>

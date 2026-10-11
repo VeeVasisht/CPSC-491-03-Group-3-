@@ -20,24 +20,24 @@ describe("PostCard", () => {
   afterEach(() => cleanup());
 
   it("renders the post title and description", () => {
-    render(<PostCard post={base} />);
+    render(<PostCard post={base} authorName="Alice" />);
     expect(screen.getByText("Sunset in Kyoto")).toBeTruthy();
     expect(screen.getByText("Amazing evening light.")).toBeTruthy();
   });
 
   it("renders the image with the title as alt text", () => {
-    render(<PostCard post={base} />);
+    render(<PostCard post={base} authorName="Alice" />);
     const img = screen.getByAltText("Sunset in Kyoto") as HTMLImageElement;
     expect(img.getAttribute("src")).toBe("https://img/kyoto.png");
   });
 
   it("does not render an image when imageUrl is empty", () => {
-    render(<PostCard post={{ ...base, imageUrl: "" }} />);
+    render(<PostCard post={{ ...base, imageUrl: "" }} authorName="Alice" />);
     expect(screen.queryByRole("img")).toBeNull();
   });
 
   it("renders createdAt as a formatted date", () => {
-    render(<PostCard post={base} />);
+    render(<PostCard post={base} authorName="Alice" />);
     const time = screen.getByText("Oct 7, 2026");
     expect(time.tagName).toBe("TIME");
     expect(time.getAttribute("dateTime")).toBe(new Date(base.createdAt).toISOString());
@@ -47,14 +47,21 @@ describe("PostCard", () => {
     render(
       <PostCard
         post={{ ...base, location: { name: "Kyoto, Japan", latitude: 35.0116, longitude: 135.7681 } }}
+        authorName="Alice"
       />,
     );
     expect(screen.getByText(/Kyoto, Japan/)).toBeTruthy();
   });
 
   it("renders without a location line when the post has no location", () => {
-    render(<PostCard post={base} />);
+    render(<PostCard post={base} authorName="Alice" />);
     expect(screen.queryByText(/📍/)).toBeNull();
     expect(screen.getByText("Sunset in Kyoto")).toBeTruthy();
+  });
+
+  it("shows the author's display name, not their id", () => {
+    render(<PostCard post={base} authorName="Alice" />);
+    expect(screen.getByText(/by Alice/)).toBeTruthy();
+    expect(screen.queryByText(/user-1/)).toBeNull();
   });
 });
