@@ -74,9 +74,9 @@ export function filterPostsByLocation(
       Number.isFinite(filter.radiusKm) &&
       filter.radiusKm >= 0 &&
       typeof post.location.latitude === "number" &&
-      Number.isFinite(filter.post.location.latitude) &&
+      Number.isFinite(post.location.latitude) &&
       typeof post.location.longitude === "number" &&
-      Number.isFinite(filter.post.location.longitude)
+      Number.isFinite(post.location.longitude)
     ) {
       const distance = calculateHaversineDistanceKm(
         filter.latitude,
