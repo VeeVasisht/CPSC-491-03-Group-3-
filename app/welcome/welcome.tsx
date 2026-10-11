@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { UserRound, KeyRound, SquarePen, Map } from "lucide-react";
+import { UserRound, KeyRound, SquarePen, Map, Newspaper } from "lucide-react";
 
 /**
  * Defines the pages displayed as navigation cards on the home page.
@@ -18,6 +18,12 @@ const pages = [
     description: "Reset your password and recover your account.",
     path: "/forgotPassword",
     icon: KeyRound,
+  },
+  {
+    title: "Travel Feed",
+    description: "Browse the latest posts from fellow travelers.",
+    path: "/feed",
+    icon: Newspaper,
   },
   {
     title: "Create a Post",
