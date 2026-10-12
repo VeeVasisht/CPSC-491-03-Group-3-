@@ -52,3 +52,50 @@
 .recenter-button:hover {
     background: #f4f4f4;
 }
+/* Sprint 3: individual post preview in a Leaflet popup. */
+.post-marker-preview {
+    max-width: 260px;
+    color: #202124;
+}
+
+.post-marker-preview img {
+    width: 100%;
+    max-height: 135px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.post-marker-preview h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0.5rem 0 0.2rem;
+}
+
+.post-marker-preview p {
+    margin: 0.25rem 0;
+}
+
+.post-marker-place { font-weight: 600; }
+
+.post-marker-preview a { color: #1d4ed8; text-decoration: underline; }
+
+.map-header [role="alert"] { color: #b91c1c; }
+.map-header button { text-decoration: underline; cursor: pointer; }
+
+.map-post-picker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+}
+
+.map-post-picker select {
+    max-width: min(100%, 400px);
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    background: white;
+    color: #222;
+    padding: 0.4rem;
+}

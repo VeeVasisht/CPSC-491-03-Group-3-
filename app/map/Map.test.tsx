@@ -7,6 +7,12 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
+import { MemoryRouter } from "react-router";
+
+const mockGetMapPosts = vi.hoisted(() => vi.fn());
+vi.mock("../services/mapPostService", () => ({
+  getMapPosts: mockGetMapPosts,
+}));
 
 import { BaseMap } from "./Map";
 
@@ -126,6 +132,7 @@ describe("BaseMap", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetMapPosts.mockResolvedValue([]);
 
     getCurrentPositionMock = vi.fn();
 
@@ -274,4 +281,36 @@ describe("BaseMap", () => {
 
     expect(mockSetView).toHaveBeenCalledWith([33.8883, -118.309], 14);
   });
+  it("loads geotagged posts and shows their previews on the existing map", async () => {
+    mockGetMapPosts.mockResolvedValue([{ id: "post-1", authorId: "author-1",
+      title: "Kyoto", description: "Hello Kyoto", imageUrl: "", createdAt: 1, updatedAt: 1,
+      location: { name: "Kyoto, Japan", latitude: 35.0116, longitude: 135.7681 },
+    }]);
+    render(<MemoryRouter><BaseMap /></MemoryRouter>);
+    expect(await screen.findByRole("link", { name: "View post" })).toHaveAttribute(
+      "href", "/posts/post-1",
+    );
+  });
+
+  it("shows a friendly error and retries if loading post markers fails", async () => {
+    mockGetMapPosts.mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce([]);
+    render(<BaseMap />);
+    expect(await screen.findByText("Unable to load post markers. Please try again.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText("No geotagged posts to show yet.")).toBeInTheDocument();
+    expect(mockGetMapPosts).toHaveBeenCalledTimes(2);
+  });
+
+  it("re-centers to the requested post when returning from Post Detail", async () => {
+    mockGetMapPosts.mockResolvedValue([{ id: "selected-post", authorId: "author-1",
+      title: "Kyoto", description: "Hello Kyoto", imageUrl: "", createdAt: 1, updatedAt: 1,
+      location: { name: "Kyoto, Japan", latitude: 35.0116, longitude: 135.7681 },
+    }]);
+    render(<MemoryRouter><BaseMap focusPostId="selected-post" /></MemoryRouter>);
+    await waitFor(() => {
+      expect(mockSetView).toHaveBeenCalledWith([35.0116, 135.7681], 14);
+    });
+  });
+
 });
