@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -7,6 +8,6 @@ export default defineConfig({
     exclude: [
       "**/*.integration.test.ts",
       "node_modules/**",
-    ],  
+    ],
   },
 });

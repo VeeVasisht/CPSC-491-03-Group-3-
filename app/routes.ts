@@ -1,3 +1,4 @@
+
 import {
   type RouteConfig,
   index,
@@ -12,6 +13,7 @@ export default [
   route("accountSettings", "routes/accountSettings.tsx"),
   route("profile", "routes/profile.tsx"),
   route("media-test", "routes/mediaTest.tsx"),
-  route("createPost", "routes/createPost.tsx")
-
+  route("createPost", "routes/createPost.tsx"),
+  route("feed", "routes/feed.tsx"),
+  route("map", "routes/map.tsx"),
 ] satisfies RouteConfig;
