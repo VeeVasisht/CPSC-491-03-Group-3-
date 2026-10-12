@@ -8,6 +8,6 @@ export default [
     route("accountSettings", "routes/accountSettings.tsx"),
     route("profile", "routes/profile.tsx"),
     route("createPost", "routes/createPost.tsx"),
-    route("map", "routes/map.tsx")
+    route("map", "routes/map.tsx"),
     route("locationFeed", "routes/locationFeed.tsx")
 ] satisfies RouteConfig;
