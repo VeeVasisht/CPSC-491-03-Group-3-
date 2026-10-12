@@ -83,6 +83,26 @@ service cloud.firestore {
     }
 
 
+    // Sprint 3 location updates must use the same validated Geotag shape as
+    // app/models/geotag.ts. Older posts may legitimately have no location.
+    function validPostLocation(data) {
+      return !data.keys().hasAny(['location'])
+        || data.location == null
+        || (
+          data.location is map
+          && data.location.keys().hasAll(['name', 'latitude', 'longitude'])
+          && data.location.keys().hasOnly(['name', 'latitude', 'longitude'])
+          && data.location.name is string
+          && data.location.name.size() > 0
+          && data.location.latitude is number
+          && data.location.latitude >= -90
+          && data.location.latitude <= 90
+          && data.location.longitude is number
+          && data.location.longitude >= -180
+          && data.location.longitude <= 180
+        );
+    }
+
     /*
      * Posts
      *   Path: /posts/{postId}
@@ -112,8 +132,11 @@ service cloud.firestore {
           'description',
           'imageUrl',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
+          'location'
         ])
+
+        && validPostLocation(request.resource.data)
 
         && request.resource.data.authorId is string
         && request.resource.data.authorId == request.auth.uid
@@ -147,7 +170,8 @@ service cloud.firestore {
           'description',
           'imageUrl',
           'createdAt',
-          'updatedAt'
+          'updatedAt',
+          'location'
         ])
         && request.resource.data.diff(resource.data)
           .affectedKeys()
@@ -155,8 +179,11 @@ service cloud.firestore {
             'title',
             'description',
             'imageUrl',
-            'updatedAt'
+            'updatedAt',
+            'location'
           ])
+
+        && validPostLocation(request.resource.data)
 
         && request.resource.data.authorId == resource.data.authorId
         && request.resource.data.createdAt == resource.data.createdAt
