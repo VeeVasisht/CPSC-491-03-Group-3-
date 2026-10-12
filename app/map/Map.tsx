@@ -8,13 +8,16 @@ import {
 import "leaflet/dist/leaflet.css";
 import "../css/Map.css";
 import { useEffect, useState } from "react";
+import { PostMarkers } from "./PostMarkers";
+import { getMapPosts } from "../services/mapPostService";
+import { toPostMarkers, type PostMarker } from "../models/postMarker";
 import L from "leaflet";
 
 const DEFAULT_CENTER: [number, number] = [34.0522, -118.2437];
 
 type Coordinates = [number, number];
 
-function UserLocation() {
+function UserLocation({ autoCenter = true }: { autoCenter?: boolean }) {
   const map = useMap();
 
   const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
@@ -33,13 +36,13 @@ function UserLocation() {
         ];
 
         setUserLocation(location);
-        map.setView(location, 14);
+        if (autoCenter) map.setView(location, 14);
       },
       (error) => {
         console.warn("Unable to get user's location:", error.message);
       },
     );
-  }, [map]);
+  }, [map, autoCenter]);
 
   useEffect(() => {
     if (!userLocation) {
@@ -98,12 +101,86 @@ function UserLocation() {
   );
 }
 
-export function BaseMap() {
+type MapLoadState = "loading" | "ready" | "error";
+
+function FocusOnPost({ post }: { post: PostMarker }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([post.location.latitude, post.location.longitude], 14);
+  }, [map, post.id, post.location.latitude, post.location.longitude]);
+  return null;
+}
+
+export function BaseMap({
+  focusPostId = null,
+  onPostSelect,
+}: {
+  focusPostId?: string | null;
+  onPostSelect?: (postId: string) => void;
+}) {
+  const [markers, setMarkers] = useState<PostMarker[]>([]);
+  const [status, setStatus] = useState<MapLoadState>("loading");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string>("");
+
+  useEffect(() => {
+    let active = true;
+    setStatus("loading");
+    void (async () => {
+      try {
+        const posts = await getMapPosts();
+        if (!active) return;
+        setMarkers(toPostMarkers(posts));
+        setStatus("ready");
+      } catch {
+        if (active) setStatus("error");
+      }
+    })();
+    return () => { active = false; };
+  }, [reloadKey]);
+
+  const selectedPostId = selectedMarkerId || focusPostId;
+  const selectedPost = selectedPostId
+    ? markers.find((marker) => marker.id === selectedPostId)
+    : undefined;
+
   return (
     <main className="map-page">
       <div className="map-header">
         <h1>Map</h1>
         <p>Explore posts near you.</p>
+        {status === "loading" && <p role="status">Loading post markers...</p>}
+        {status === "error" && (
+          <div role="alert">
+            <p>Unable to load post markers. Please try again.</p>
+            <button type="button" onClick={() => setReloadKey((key) => key + 1)}>
+              Retry
+            </button>
+          </div>
+        )}
+        {status === "ready" && markers.length === 0 && (
+          <p role="status">No geotagged posts to show yet.</p>
+        )}
+        {status === "ready" && markers.length > 0 && (
+          <label className="map-post-picker">
+            Find a post on the map
+            <select
+              aria-label="Find a post on the map"
+              value={selectedMarkerId || focusPostId || ""}
+              onChange={(event) => setSelectedMarkerId(event.target.value)}
+            >
+              <option value="">Choose a post...</option>
+              {markers.map((marker) => (
+                <option key={marker.id} value={marker.id}>
+                  {marker.title} — {marker.location.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {status === "ready" && focusPostId && !selectedPost && (
+          <p role="status">That post has no available map location.</p>
+        )}
       </div>
 
       <div className="map-container">
@@ -122,8 +199,9 @@ export function BaseMap() {
               },
             }}
           />
-
-          <UserLocation />
+          <UserLocation autoCenter={!selectedPostId} />
+          <PostMarkers posts={markers} onSelect={onPostSelect} />
+          {selectedPost && <FocusOnPost post={selectedPost} />}
         </MapContainer>
       </div>
     </main>
