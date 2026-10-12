@@ -9,5 +9,6 @@ export default [
     route("profile", "routes/profile.tsx"),
     route("createPost", "routes/createPost.tsx"),
     route("map", "routes/map.tsx"),
-    route("locationFeed", "routes/locationFeed.tsx")
+    route("locationFeed", "routes/locationFeed.tsx"),
+    route("feed", "routes/feed.tsx")
 ] satisfies RouteConfig;
