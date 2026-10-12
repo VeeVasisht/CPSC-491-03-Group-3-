@@ -1,3 +1,4 @@
+
 import type { Geotag } from "./geotag";
 
 export interface LocationFeedPost {
@@ -18,7 +19,8 @@ export interface LocationFeedFilter {
 }
 
 /**
- * Calculates distance between 2 latitude/longitude pairs using Haversine formula (in kilometers).
+ * Calculates distance between 2 latitude/longitude pairs
+ * using the Haversine formula (in kilometers).
  */
 export function calculateHaversineDistanceKm(
   lat1: number,
@@ -38,55 +40,97 @@ export function calculateHaversineDistanceKm(
       Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
   return R * c;
 }
 
 /**
- * Filters feed posts based on geographic region name or lat/lon radius proximity.
+ * Filters feed posts based on geographic region name
+ * or latitude/longitude radius proximity.
+ *
+ * Invalid coordinates and radius values are rejected
+ * before calculating Haversine distance.
  */
 export function filterPostsByLocation(
   posts: LocationFeedPost[],
   filter: LocationFeedFilter,
 ): LocationFeedPost[] {
   return posts.filter((post) => {
+    // Ignore posts without location information.
     if (!post.location) return false;
 
-    // Filter by Region Name query
+    // Filter by Region Name query.
     if (filter.regionName && filter.regionName.trim() !== "") {
       const query = filter.regionName.trim().toLowerCase();
+
       const locationName =
         typeof post.location.name === "string"
-        ? post.location.name.trim().toLowerCase()
-        : "";
+          ? post.location.name.trim().toLowerCase()
+          : "";
 
       if (!locationName || !locationName.includes(query)) {
         return false;
       }
     }
 
-    // Filter by Latitude/Longitude radius with Number.isFinite & non-negative radius checks
-    if (
-      typeof filter.latitude === "number" &&
-      Number.isFinite(filter.latitude) &&
-      typeof filter.longitude === "number" &&
-      Number.isFinite(filter.longitude) &&
-      typeof filter.radiusKm === "number" &&
-      Number.isFinite(filter.radiusKm) &&
-      filter.radiusKm >= 0 &&
-      typeof post.location.latitude === "number" &&
-      Number.isFinite(post.location.latitude) &&
-      typeof post.location.longitude === "number" &&
-      Number.isFinite(post.location.longitude)
-    ) {
+    // Determine whether a radius-based filter was requested.
+    const hasRadiusFilter =
+      filter.latitude !== undefined ||
+      filter.longitude !== undefined ||
+      filter.radiusKm !== undefined;
+
+    if (hasRadiusFilter) {
+      const { latitude, longitude, radiusKm } = filter;
+
+      // Validate filter coordinates and radius.
+      if (
+        typeof latitude !== "number" ||
+        !Number.isFinite(latitude) ||
+        latitude < -90 ||
+        latitude > 90 ||
+        typeof longitude !== "number" ||
+        !Number.isFinite(longitude) ||
+        longitude < -180 ||
+        longitude > 180 ||
+        typeof radiusKm !== "number" ||
+        !Number.isFinite(radiusKm) ||
+        radiusKm < 0
+      ) {
+        return false;
+      }
+
+      // Validate the post's coordinates.
+      const postLat = post.location.latitude;
+      const postLon = post.location.longitude;
+
+      if (
+        typeof postLat !== "number" ||
+        !Number.isFinite(postLat) ||
+        postLat < -90 ||
+        postLat > 90 ||
+        typeof postLon !== "number" ||
+        !Number.isFinite(postLon) ||
+        postLon < -180 ||
+        postLon > 180
+      ) {
+        return false;
+      }
+
+      // Calculate distance only after validating all inputs.
       const distance = calculateHaversineDistanceKm(
-        filter.latitude,
-        filter.longitude,
-        post.location.latitude,
-        post.location.longitude,
+        latitude,
+        longitude,
+        postLat,
+        postLon,
       );
-      if (distance > filter.radiusKm) return false;
+
+      // Exclude posts outside the requested radius.
+      if (distance > radiusKm) {
+        return false;
+      }
     }
 
+    // Post passed all applicable filters.
     return true;
   });
 }
