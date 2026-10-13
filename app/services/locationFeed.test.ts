@@ -1,5 +1,7 @@
+// app/services/locationFeed.integration.test.ts
+
 import { beforeAll, describe, expect, it } from "vitest";
-import { connectFirestoreEmulator, doc, setDoc } from "firebase/firestore";
+import { connectFirestoreEmulator, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { getLocationFeed } from "./locationFeedService";
 
@@ -22,7 +24,7 @@ describe("Location Feed Integration Tests", () => {
         latitude: 33.6846,
         longitude: -117.8265,
       },
-      createdAt: { toMillis: () => Date.now() },
+      createdAt: serverTimestamp(),
     });
 
     const feed = await getLocationFeed({ regionName: "Irvine" });
