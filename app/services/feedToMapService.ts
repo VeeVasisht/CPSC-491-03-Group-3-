@@ -1,67 +1,51 @@
-import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-} from "firebase/firestore";
-
-import { db } from "../firebase/firebase";
-
-import {
-  normalizePost,
-  paginateFeed,
-  PAGE_SIZE,
-  type FeedPage,
-} from "../models/feed";
 
 import type { Geotag } from "../models/geotag";
 
-/**
- * Fetch the first page of the feed, newest posts first.
- *
- * Location data is included so a geotagged travel post can be
- * connected to the map.
- */
-export async function getFirstFeedPage(): Promise<FeedPage> {
-  const postsRef = collection(db, "posts");
+import {
+  normalizeGeotag,
+  validateGeotag,
+} from "../models/geotag";
 
-  const q = query(
-    postsRef,
-    orderBy("createdAt", "desc"),
-    limit(PAGE_SIZE + 1),
-  );
+export function canOpenLocationOnMap(
+  geotag: Geotag | null | undefined,
+): boolean {
+  if (!geotag) {
+    return false;
+  }
 
-  const snapshot = await getDocs(q);
+  return validateGeotag(geotag).valid;
+}
 
-  const posts = snapshot.docs.map((docSnap) => {
-    const data = docSnap.data();
+export function getMapLocationFromGeotag(
+  geotag: Geotag | null | undefined,
+): Geotag {
+  if (!geotag) {
+    throw new Error(
+      "This post does not have a location.",
+    );
+  }
 
-    const location =
-      data.location &&
-      typeof data.location.name === "string" &&
-      typeof data.location.latitude === "number" &&
-      typeof data.location.longitude === "number"
-        ? ({
-            name: data.location.name,
-            latitude: data.location.latitude,
-            longitude: data.location.longitude,
-          } satisfies Geotag)
-        : null;
+  const validation = validateGeotag(geotag);
 
-    return normalizePost({
-      id: docSnap.id,
-      authorId: data.authorId,
-      title: data.title,
-      description: data.description,
-      imageUrl: data.imageUrl,
-      createdAt:
-        data.createdAt?.toMillis?.() ?? Date.now(),
-      updatedAt:
-        data.updatedAt?.toMillis?.() ?? undefined,
-      location,
-    });
+  if (!validation.valid) {
+    throw new Error(
+      "This post has invalid location data.",
+    );
+  }
+
+  return normalizeGeotag(geotag);
+}
+
+export function buildMapUrl(
+  geotag: Geotag | null | undefined,
+): string {
+  const location = getMapLocationFromGeotag(geotag);
+
+  const params = new URLSearchParams({
+    lat: String(location.latitude),
+    lng: String(location.longitude),
+    name: location.name,
   });
 
-  return paginateFeed(posts);
+  return `/map?${params.toString()}`;
 }
