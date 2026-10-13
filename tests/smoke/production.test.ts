@@ -46,12 +46,6 @@ describe("Production deployment smoke tests", () => {
     expect(response.ok).toBe(true);
   });
 
-  it("serves the home page successfully", async () => {
-    const { response } = await loadHome();
-    expect(response.status).toBe(200);
-    expect(response.headers.get("content-type")).toMatch(/text\/html/i);
-  });
-
   it("returns a valid React Router HTML document", async () => {
     const { html } = await loadHome();
 
@@ -65,14 +59,14 @@ describe("Production deployment smoke tests", () => {
   });
 
   it("serves the home page successfully", async () => {
-    const { response } = await loadHome();
+    const { response, html } = await loadHome();
 
+    // Verify that Firebase Hosting returns a successful response.
     expect(response.status).toBe(200);
 
-    const contentType = response.headers.get("content-type");
-
-    expect(contentType).not.toBeNull();
-    expect(contentType ?? "").toMatch(/text\/html/i);
+    // Verify that the response contains an HTML document.
+    expect(html).toMatch(/<!doctype html>/i);
+    expect(html).toMatch(/<html\b/i);
   });
 
   // Add only confirmed, public routes here. SPA rewrites can return HTTP 200
