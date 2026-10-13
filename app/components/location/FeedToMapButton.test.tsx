@@ -1,12 +1,14 @@
 import "@testing-library/jest-dom/vitest";
 
 import {
+  cleanup,
   fireEvent,
   render,
   screen,
 } from "@testing-library/react";
 
 import {
+  afterEach,
   beforeEach,
   describe,
   expect,
@@ -33,6 +35,10 @@ vi.mock("react-router", async () => {
 describe("FeedToMapButton", () => {
   beforeEach(() => {
     navigateMock.mockClear();
+  });
+
+  afterEach(() => {
+    cleanup();
   });
 
   it("shows the map button for a valid location", () => {
