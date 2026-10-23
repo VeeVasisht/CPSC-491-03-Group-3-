@@ -7,25 +7,26 @@ if (site.protocol !== "https:") {
   throw new Error("Smoke tests require an HTTPS production URL");
 }
 
-async function get(path: string): Promise<Response> {
+const htmlHeaders = {
+  "Accept-Encoding": "identity",
+  Accept: "text/html",
+};
+
+async function get(
+  path: string,
+  headers: Record<string, string> = {},
+): Promise<Response> {
   // Do not follow redirects silently: a login redirect can conceal a broken route.
   return fetch(new URL(path, site), {
     redirect: "manual",
-    headers: { "Cache-Control": "no-cache" },
+    headers: { "Cache-Control": "no-cache", ...headers },
     signal: AbortSignal.timeout(10_000),
   });
 }
 
 async function loadHome() {
-  const response = await fetch(site, {
-    headers: {
-      "Accept-Encoding": "identity",
-      Accept: "text/html",
-    },
-  });
-
+  const response = await get("/", htmlHeaders);
   const html = await response.text();
-
   return { response, html };
 }
 
