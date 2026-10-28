@@ -1,6 +1,6 @@
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
 import { auth, db } from "../firebase/firebase";
-import type { Trip, TripInput } from "./trip";
+import type { Trip, TripInput } from "../models/trip";
 import { validateTrip } from "./tripValidation";
 
 const trips = collection(db, "trips");

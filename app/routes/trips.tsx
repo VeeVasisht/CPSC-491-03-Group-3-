@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { auth } from "../firebase/firebase";
 import { TripForm } from "../trips/TripForm";
-import type { Trip, TripInput } from "../trips/trip";
+import type { Trip, TripInput } from "../models/trip";
 import { createTrip, getTrips } from "../trips/tripService";
 
 // Parse date-only strings as calendar dates to avoid timezone shifts.

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { TripInput } from "./trip";
+import type { TripInput } from "../models/trip";
 
 const mocks = vi.hoisted(() => ({
   currentUser: { uid: "owner-1" } as { uid: string } | null,

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { auth } from "../firebase/firebase";
 import { TripForm } from "../trips/TripForm";
-import type { Trip, TripInput } from "../trips/trip";
+import type { Trip, TripInput } from "../models/trip";
 import { deleteTrip, getTripById, updateTrip } from "../trips/tripService";
 
 // Treat YYYY-MM-DD values as local calendar dates, not UTC timestamps.

@@ -1,4 +1,4 @@
-import type { TripInput } from "./trip";
+import type { TripInput } from "../models/trip";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 

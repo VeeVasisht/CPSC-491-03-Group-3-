@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validateTrip } from "./tripValidation";
-import type { TripInput } from "./trip";
+import type { TripInput } from "../models/trip";
 
 const valid: TripInput = {
   title: "Weekend trip", description: "", destination: "Seattle",

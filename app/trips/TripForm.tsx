@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import type { TripInput } from "./trip";
+import type { TripInput } from "../models/trip";
 import { validateTrip } from "./tripValidation";
 
 const EMPTY: TripInput = { title: "", description: "", destination: "", startDate: "", endDate: "" };
