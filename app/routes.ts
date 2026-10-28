@@ -10,5 +10,7 @@ export default [
     route("createPost", "routes/createPost.tsx"),
     route("map", "routes/map.tsx"),
     route("locationFeed", "routes/locationFeed.tsx"),
-    route("feed", "routes/feed.tsx")
+    route("feed", "routes/feed.tsx"),
+    route("trips", "routes/trips.tsx"),
+    route("trips/:tripId", "routes/tripDetail.tsx")
 ] satisfies RouteConfig;
