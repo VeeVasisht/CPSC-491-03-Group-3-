@@ -34,8 +34,15 @@ export function validateRouteDestinations(destinations: Destination[]): { valid:
     return { valid: true, error: "Single destination loaded: displaying marker only." };
   }
 
-  for (destinations) {
-    
+  for (const dest of destinations) {
+    if (
+      typeof dest.lat !== 'number' || typeof dest.lng !== 'number' ||
+      isNaN(dest.lat) || isNaN(dest.lng) ||
+      dest.lat < -90 || dest.lat > 90 || dest.lng < -180 || dest.lng > 180
+    ) {
+      return { valid: false, error: `Invalid geographic coordinates for destination: "${dest.name || dest.id}"` };
+    }
   }
+
   return { valid: true };
 }
