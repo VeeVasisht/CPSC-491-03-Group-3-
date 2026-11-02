@@ -1,3 +1,4 @@
+
 import {
   type RouteConfig,
   index,
@@ -6,7 +7,14 @@ import {
 
 export default [
   index("routes/home.tsx"),
+  route("registration", "routes/registration.tsx"),
   route("login", "routes/login.tsx"),
-  route("forget-password", "../pages/ForgotPassword.jsx"),
-  route("settings", "../pages/AccountSettings.jsx"),
+  route("forgotPassword", "routes/forgotPassword.tsx"),
+  route("accountSettings", "routes/accountSettings.tsx"),
+  route("profile", "routes/profile.tsx"),
+  route("createPost", "routes/createPost.tsx"),
+  route("map", "routes/map.tsx"),
+  route("locationFeed", "routes/locationFeed.tsx"),
+  route("feed", "routes/feed.tsx"),
+  route("itineraries", "routes/itineraries.tsx"),
 ] satisfies RouteConfig;
