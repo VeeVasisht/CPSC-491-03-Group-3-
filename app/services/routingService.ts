@@ -1,4 +1,4 @@
-import { Destination, RouteResult, RouteSegment } from "~/models/route";
+import type { Destination, RouteResult, RouteSegment } from "~/models/route";
 import { validateRouteDestinations } from "~/models/route";
 
 
@@ -64,3 +64,6 @@ export async function calculateRouteFromDestinations(destinations: Destination[]
   }
 }
 
+function decodePolyline(encoded: string): { lat: number; lng: number }[] {
+  return [];
+}
