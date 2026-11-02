@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -29,8 +30,8 @@ service cloud.firestore {
       // Read only your own profile.
       allow read: if isOwner(userId);
 
-      // Create your own profile: exactly the 4 expected fields, valid
-      // lengths, and server timestamps.
+      // Create your own profile: exactly the 4 expected fields,
+      // valid lengths, and server timestamps.
       allow create: if
         isOwner(userId)
 
@@ -54,7 +55,8 @@ service cloud.firestore {
         && request.resource.data.updatedAt is timestamp
         && request.resource.data.updatedAt == request.time;
 
-      // Update only displayName, bio, updatedAt. createdAt is immutable.
+      // Update only displayName, bio, updatedAt.
+      // createdAt is immutable.
       allow update: if
         isOwner(userId)
 
@@ -83,8 +85,64 @@ service cloud.firestore {
 
 
     /*
-     * Default deny — any path not explicitly allowed above is blocked.
+     * Sprint 4 — Itinerary Organization
+     *
+     * Path:
+     * /users/{userId}/organizedItineraries/{itineraryId}
+     *
+     * Fields:
+     * title, destinations, updatedAt
+     *
+     * Each user can access only their own itineraries.
      */
+
+    function isValidItinerary() {
+      return request.resource.data.keys().hasAll([
+          'title', 'destinations', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'title', 'destinations', 'updatedAt'
+        ])
+
+        // Validate itinerary title.
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 100
+
+        // Validate destination list.
+        && request.resource.data.destinations is list
+        && request.resource.data.destinations.size() <= 100
+
+        // Validate update timestamp.
+        && request.resource.data.updatedAt is timestamp
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    match /users/{userId}/organizedItineraries/{itineraryId} {
+
+      // Users can read only their own itineraries.
+      allow read: if isOwner(userId);
+
+      // Users can create valid itineraries for themselves.
+      allow create: if
+        isOwner(userId)
+        && isValidItinerary();
+
+      // Users can update only their own valid itineraries.
+      allow update: if
+        isOwner(userId)
+        && isValidItinerary();
+
+      // Users can delete only their own itineraries.
+      allow delete: if isOwner(userId);
+    }
+
+
+    /*
+     * Default deny — any path not explicitly allowed
+     * above is blocked.
+     */
+
     match /{document=**} {
       allow read, write: if false;
     }
