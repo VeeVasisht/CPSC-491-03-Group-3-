@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Destination, RouteResult } from "~/models/route";
+import type { Destination, RouteResult } from "~/models/route";
 import { calculateRouteFromDestinations } from "~/services/routingService";
 
 interface RouteMapDisplayProps {

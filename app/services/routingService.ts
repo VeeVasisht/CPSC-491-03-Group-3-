@@ -3,17 +3,18 @@ import { validateRouteDestinations } from "~/models/route";
 
 
 export async function calculateRouteFromDestinations(destinations: Destination[]): Promise<RouteResult> {
+  if (destinations && destinations.length === 1) {
+    return {
+      success: true,
+      segments: [],
+      totalDistanceMeters: 0,
+      totalDurationSeconds: 0,
+    };
+  }
+
   const validation = validateRouteDestinations(destinations);
   
   if (!validation.valid) {
-    if (destinations.length === 1) {
-      return {
-        success: true,
-        segments: [],
-        totalDistanceMeters: 0,
-        totalDurationSeconds: 0,
-      };
-    }
     return {
       success: false,
       segments: [],
@@ -28,7 +29,6 @@ export async function calculateRouteFromDestinations(destinations: Destination[]
   try {
     const coordinatesQuery = sortedDestinations.map(d => `${d.lng},${d.lat}`).join(";");
     
-    // Requesting route data from the external/internal routing service endpoint
     const response = await fetch(`https://api.routing-service.example/v1/directions/${coordinatesQuery}`);
     
     if (!response.ok) {
