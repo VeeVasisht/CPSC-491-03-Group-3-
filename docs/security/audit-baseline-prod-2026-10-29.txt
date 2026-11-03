@@ -1,0 +1,28 @@
+# npm audit report
+
+re2js  2.2.0 - 2.8.6
+Severity: high
+RE2JS: Quadratic-time denial of service in re2js lookbehind matching - https://github.com/advisories/GHSA-gg6h-894w-4m9c
+fix available via `npm audit fix`
+node_modules/re2js
+
+zod  <4.6.6
+Severity: high
+Zod can exhaust memory while validating oversized constrained collections - https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
+No fix available
+node_modules/zod
+  @firebase-oss/ui-core  *
+  Depends on vulnerable versions of zod
+  node_modules/@firebase-oss/ui-core
+    @firebase-oss/ui-react  *
+    Depends on vulnerable versions of @firebase-oss/ui-core
+    Depends on vulnerable versions of zod
+    node_modules/@firebase-oss/ui-react
+
+4 high severity vulnerabilities
+
+To address issues that do not require attention, run:
+  npm audit fix
+
+Some issues need review, and may require choosing
+a different dependency.

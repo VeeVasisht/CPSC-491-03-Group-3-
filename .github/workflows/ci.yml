@@ -36,6 +36,21 @@ jobs:
       - name: Run unit tests
         run: npx vitest run
 
+  audit:
+    name: Dependency Audit (CC7.1)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit dependencies (fail on critical)
+        run: npm audit --audit-level=critical
+
   build:
     name: Build (versioned)
     runs-on: ubuntu-latest
