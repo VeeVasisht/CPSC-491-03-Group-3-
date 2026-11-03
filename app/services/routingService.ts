@@ -1,6 +1,36 @@
-import type { Destination, RouteResult, RouteSegment } from "~/models/route";
+import type { Destination, RouteResult, RouteSegment, RouteCoordinate } from "~/models/route";
 import { validateRouteDestinations } from "~/models/route";
 
+
+function decodePolyline(encoded: string): RouteCoordinate[] {
+  let points: RouteCoordinate[] = [ ];
+  let index = 0, len = encoded.length;
+  let lat = 0, lng = 0;
+
+  while (index < len) {
+    let b, shift = 0, result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = ((result & 1) !== ? ~(result >> 1) : (result >> 1));
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = ((result & 1) !== ? ~(result >> 1) : (result >> 1));
+    lng += dlng;
+
+    points.push({ lat: lat / 1e5, lng: lng / 1e5 });
+  }
+  return points;
+}
 
 export async function calculateRouteFromDestinations(destinations: Destination[]): Promise<RouteResult> {
   if (destinations && destinations.length === 1) {
@@ -13,7 +43,6 @@ export async function calculateRouteFromDestinations(destinations: Destination[]
   }
 
   const validation = validateRouteDestinations(destinations);
-  
   if (!validation.valid) {
     return {
       success: false,
@@ -29,22 +58,28 @@ export async function calculateRouteFromDestinations(destinations: Destination[]
   try {
     const coordinatesQuery = sortedDestinations.map(d => `${d.lng},${d.lat}`).join(";");
     
-    const response = await fetch(`https://api.routing-service.example/v1/directions/${coordinatesQuery}`);
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordinatesQuery}?overview=full&geometries=polyline`;
     
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Routing service request failed with status: ${response.status}`);
     }
 
     const data = await response.json();
     
-    const segments: RouteSegment[] = data.routes[0].legs.map((leg: any) => ({
+    if (!data.routes || data.routes.length === 0) {
+      throw new Error("No route found between the provided destinations.");
+    }
+
+    const route = data.routes[0];
+    const segments: RouteSegment[] = route.legs.map((leg: any) => ({
       distanceMeters: leg.distance,
       durationSeconds: leg.duration,
-      polylinePoints: decodePolyline(leg.geometry)
+      polylinePoints: decodePolyline(route.geometry)
     }));
 
-    const totalDistanceMeters = segments.reduce((sum, seg) => sum + seg.distanceMeters, 0);
-    const totalDurationSeconds = segments.reduce((sum, seg) => sum + seg.durationSeconds, 0);
+    const totalDistanceMeters = route.distance;
+    const totalDurationSeconds = route.duration;
 
     return {
       success: true,
@@ -62,8 +97,4 @@ export async function calculateRouteFromDestinations(destinations: Destination[]
       error: errorMessage,
     };
   }
-}
-
-function decodePolyline(encoded: string): { lat: number; lng: number }[] {
-  return [];
 }
