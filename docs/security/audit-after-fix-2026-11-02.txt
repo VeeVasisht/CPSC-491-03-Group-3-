@@ -1,0 +1,19 @@
+# npm audit report
+
+zod  <4.6.6
+Severity: high
+Zod can exhaust memory while validating oversized constrained collections - https://github.com/advisories/GHSA-mrhx-c7xc-m3w5
+No fix available
+node_modules/zod
+  @firebase-oss/ui-core  *
+  Depends on vulnerable versions of zod
+  node_modules/@firebase-oss/ui-core
+    @firebase-oss/ui-react  *
+    Depends on vulnerable versions of @firebase-oss/ui-core
+    Depends on vulnerable versions of zod
+    node_modules/@firebase-oss/ui-react
+
+3 high severity vulnerabilities
+
+Some issues need review, and may require choosing
+a different dependency.
