@@ -183,23 +183,39 @@ service cloud.firestore {
     }
 
 
-    // Sprint 4 P5: private itinerary organization records.
+    /*
+     * Legacy itineraries: preserve read access to existing user records
+     * for a later migration, but write new itineraries under trips.
+     */
     match /users/{userId}/organizedItineraries/{itineraryId} {
-      allow read, delete: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
 
-      allow create, update: if isOwner(userId)
-        && request.resource.data.keys().hasOnly([
-          'title', 'destinations', 'updatedAt'
-        ])
-        && request.resource.data.keys().hasAll([
-          'title', 'destinations', 'updatedAt'
-        ])
-        && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
-        && request.resource.data.title.size() <= 100
-        && request.resource.data.destinations is list
-        && request.resource.data.destinations.size() <= 100
-        && request.resource.data.updatedAt == request.time;
+    // A nested itinerary inherits access rights from its parent trip.
+    function ownsTrip(tripId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/trips/$(tripId))
+        && get(/databases/$(database)/documents/trips/$(tripId)).data.ownerId == request.auth.uid;
+    }
+
+    function validItinerary(data) {
+      return data.keys().hasAll(['title', 'destinations', 'updatedAt'])
+        && data.keys().hasOnly(['title', 'destinations', 'updatedAt'])
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 100
+        && data.destinations is list
+        && data.destinations.size() <= 100
+        && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    match /trips/{tripId}/itineraries/{itineraryId} {
+      allow read: if ownsTrip(tripId);
+      allow create, update: if ownsTrip(tripId)
+        && validItinerary(request.resource.data);
+      allow delete: if ownsTrip(tripId);
     }
 
     /*

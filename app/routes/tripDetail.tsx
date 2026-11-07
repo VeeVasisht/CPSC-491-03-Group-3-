@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Clock3,
   Compass,
+  ListChecks,
   MapPin,
   Pencil,
   Route,
@@ -15,6 +16,8 @@ import {
 import { auth } from "../firebase/firebase";
 import { TripForm } from "../trips/TripForm";
 import type { Trip, TripInput } from "../models/trip";
+import type { OrganizedItinerary } from "../models/itinerary";
+import { listTripItineraries } from "../services/tripItineraryService";
 import { deleteTrip, getTripById, updateTrip } from "../trips/tripService";
 
 // Treat YYYY-MM-DD values as local calendar dates, not UTC timestamps.
@@ -37,6 +40,9 @@ export default function TripDetail() {
   const { tripId } = useParams();
   const navigate = useNavigate();
   const [trip, setTrip] = useState<Trip | null>(null);
+  const [itineraries, setItineraries] = useState<OrganizedItinerary[]>([]);
+  const [itineraryError, setItineraryError] = useState("");
+  const [loadingItineraries, setLoadingItineraries] = useState(true);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -47,12 +53,31 @@ export default function TripDetail() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!active) return;
       if (!user || !tripId) {
+        setTrip(null);
+        setItineraries([]);
         setError("Log in to view this trip.");
         setLoading(false);
+        setLoadingItineraries(false);
         return;
       }
       setLoading(true);
       setError("");
+      setItineraryError("");
+      setLoadingItineraries(true);
+      setItineraries([]);
+      listTripItineraries(tripId)
+        .then((result) => {
+          if (active) setItineraries(result);
+        })
+        .catch((e: unknown) => {
+          if (active)
+            setItineraryError(
+              e instanceof Error ? e.message : "Unable to load itineraries.",
+            );
+        })
+        .finally(() => {
+          if (active) setLoadingItineraries(false);
+        });
       getTripById(tripId)
         .then((result) => {
           if (active) setTrip(result);
@@ -73,9 +98,9 @@ export default function TripDetail() {
 
   async function save(input: TripInput) {
     if (!tripId) return;
-    await updateTrip(tripId, input);
-    setTrip(await getTripById(tripId));
     try {
+      await updateTrip(tripId, input);
+      setTrip(await getTripById(tripId));
       setEditing(false);
     } catch {
       console.error(
@@ -225,6 +250,13 @@ export default function TripDetail() {
                       >
                         <Pencil size={17} aria-hidden="true" /> Edit trip
                       </button>
+                      <Link
+                        to={`/trips/${tripId}/itineraries`}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 dark:border-indigo-400/30 dark:bg-indigo-400/10 dark:text-indigo-300 dark:hover:bg-indigo-400/20"
+                      >
+                        <ListChecks size={17} aria-hidden="true" /> Manage
+                        itineraries
+                      </Link>
                       <button
                         type="button"
                         onClick={remove}
@@ -246,33 +278,105 @@ export default function TripDetail() {
                       </span>
                       <div>
                         <h2 className="text-xl font-semibold">
-                          Your itinerary
+                          Trip itineraries
                         </h2>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                          Plan each day of your adventure
+                          Build and organize multiple itineraries for this trip
                         </p>
                       </div>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
-                      Coming soon
-                    </span>
+                    <Link
+                      to={`/trips/${tripId}/itineraries`}
+                      className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+                    >
+                      <Route size={17} aria-hidden="true" /> Open itineraries
+                    </Link>
                   </div>
-                  <div className="flex flex-col items-center px-6 py-12 text-center sm:py-14">
-                    <div className="mb-5 rounded-2xl bg-indigo-50 p-5 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
-                      <CalendarDays
-                        size={36}
-                        strokeWidth={1.5}
-                        aria-hidden="true"
-                      />
-                    </div>
-                    <h3 className="text-lg font-semibold">
-                      Your journey starts here
-                    </h3>
-                    <p className="mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
-                      Soon you'll be able to organize your trip by day, add
-                      activities, and build an itinerary all in one place.
+                  {loadingItineraries ? (
+                    <p
+                      role="status"
+                      className="px-6 py-8 text-sm text-slate-500 dark:text-slate-400"
+                    >
+                      Loading itineraries…
                     </p>
-                  </div>
+                  ) : itineraryError ? (
+                    <p
+                      role="alert"
+                      className="px-6 py-8 text-sm text-red-600 dark:text-red-400"
+                    >
+                      {itineraryError}
+                    </p>
+                  ) : itineraries.length > 0 ? (
+                    <div className="grid gap-4 p-6 sm:grid-cols-2 sm:p-7">
+                      {itineraries.map((itinerary) => (
+                        <Link
+                          key={itinerary.id}
+                          to={`/trips/${tripId}/itineraries`}
+                          className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-indigo-400 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 dark:border-white/10 dark:bg-white/5 dark:hover:border-indigo-400"
+                        >
+                          <div className="mb-3 flex items-start justify-between gap-3">
+                            <h3 className="break-words text-lg font-semibold group-hover:text-indigo-600 dark:group-hover:text-indigo-300">
+                              {itinerary.title}
+                            </h3>
+                            <Route
+                              size={20}
+                              className="shrink-0 text-indigo-500"
+                              aria-hidden="true"
+                            />
+                          </div>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">
+                            {itinerary.destinations.length}{" "}
+                            {itinerary.destinations.length === 1
+                              ? "destination"
+                              : "destinations"}
+                          </p>
+                          {itinerary.destinations.length > 0 && (
+                            <ul className="mt-3 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                              {itinerary.destinations
+                                .slice(0, 3)
+                                .map((destination) => (
+                                  <li
+                                    key={destination.id}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <MapPin
+                                      size={14}
+                                      className="shrink-0 text-indigo-500"
+                                      aria-hidden="true"
+                                    />
+                                    <span className="truncate">
+                                      {destination.location.name}
+                                    </span>
+                                  </li>
+                                ))}
+                              {itinerary.destinations.length > 3 && (
+                                <li className="text-slate-500 dark:text-slate-400">
+                                  +{itinerary.destinations.length - 3} more
+                                </li>
+                              )}
+                            </ul>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center px-6 py-12 text-center sm:py-14">
+                      <div className="mb-5 rounded-2xl bg-indigo-50 p-5 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
+                        <CalendarDays
+                          size={36}
+                          strokeWidth={1.5}
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <h3 className="text-lg font-semibold">
+                        No itineraries yet
+                      </h3>
+                      <p className="mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
+                        Create an itinerary to organize the destinations you
+                        want to visit on this trip.
+                      </p>
+                    </div>
+                  )}
                 </section>
               </>
             )}

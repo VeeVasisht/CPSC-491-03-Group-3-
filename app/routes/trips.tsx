@@ -73,8 +73,8 @@ export default function MyTrips() {
   }, []);
 
   async function addTrip(input: TripInput) {
-    const id = await createTrip(input);
     try {
+      const id = await createTrip(input);
       navigate(`/trips/${id}`);
     } catch {
       console.error(

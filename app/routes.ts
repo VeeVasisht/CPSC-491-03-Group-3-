@@ -12,6 +12,9 @@ export default [
   route("locationFeed", "routes/locationFeed.tsx"),
   route("feed", "routes/feed.tsx"),
   route("itineraries", "routes/itineraries.tsx"),
+  route("trips/:tripId/itineraries", "routes/itineraries.tsx", {
+    id: "trip-itineraries",
+  }),
   route("trips", "routes/trips.tsx"),
   route("trips/:tripId", "routes/tripDetail.tsx"),
 ] satisfies RouteConfig;
