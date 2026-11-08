@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(), getTripById: vi.fn(), updateTrip: vi.fn(), deleteTrip: vi.fn(), authListener: vi.fn(),
+  listTripItineraries: vi.fn(),
 }));
 vi.mock("react-router", () => ({
   Link: ({ to, children, ...props }: { to: string; children: React.ReactNode; [key: string]: unknown }) =>
@@ -15,6 +16,9 @@ vi.mock("firebase/auth", () => ({ onAuthStateChanged: mocks.authListener }));
 vi.mock("../firebase/firebase", () => ({ auth: {} }));
 vi.mock("../trips/tripService", () => ({
   getTripById: mocks.getTripById, updateTrip: mocks.updateTrip, deleteTrip: mocks.deleteTrip,
+}));
+vi.mock("../services/tripItineraryService", () => ({
+  listTripItineraries: mocks.listTripItineraries,
 }));
 import TripDetail from "../routes/tripDetail";
 
@@ -28,6 +32,7 @@ beforeEach(() => {
   mocks.getTripById.mockResolvedValue(trip);
   mocks.updateTrip.mockResolvedValue(undefined);
   mocks.deleteTrip.mockResolvedValue(undefined);
+  mocks.listTripItineraries.mockResolvedValue([]);
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -74,8 +79,28 @@ describe("Trip Detail page", () => {
     render(<TripDetail />);
     await screen.findByRole("heading", { name: "Germany vacation" });
     fireEvent.click(screen.getByRole("button", { name: /delete trip/i }));
-    expect(await screen.findByRole("alert")).toHaveProperty("textContent", "Permission denied");
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toContain("Permission denied");
+    });
     expect(mocks.navigate).not.toHaveBeenCalled();
+  });
+
+  it("shows saved itineraries for the current trip", async () => {
+    mocks.listTripItineraries.mockResolvedValueOnce([
+      {
+        id: "tokyo",
+        title: "Tokyo Itinerary",
+        destinations: [
+          { id: "stop-1", location: { name: "Tokyo Tower", latitude: 35.66, longitude: 139.75 }, postId: null },
+        ],
+      },
+    ]);
+    render(<TripDetail />);
+    expect(await screen.findByText("Tokyo Itinerary")).toBeTruthy();
+    expect(screen.getByText("Tokyo Tower")).toBeTruthy();
+    expect(mocks.listTripItineraries).toHaveBeenCalledWith("trip-1");
+    expect(screen.getByRole("link", { name: /manage itineraries/i }).getAttribute("href"))
+      .toBe("/trips/trip-1/itineraries");
   });
 
   it("shows a not-found state", async () => {
