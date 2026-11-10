@@ -14,7 +14,7 @@
   "dependencies": {
     "@firebase-oss/ui-react": "^7.0.3",
     "@firebase-oss/ui-styles": "^7.1.0",
-    "firebase": "^12.19.0",
+    "firebase": "^13.2.0",
     "isbot": "^5.1.36",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.54.0",
