@@ -28,4 +28,15 @@ describe("Welcome", () => {
     const map = screen.getByRole("link", { name: /Explore Map/ });
     expect(feed.className).toBe(map.className);
   });
+
+  it("has a Your Profile card linking to /profile", () => {
+    render(
+      <MemoryRouter>
+        <Welcome />
+      </MemoryRouter>,
+    );
+    const link = screen.getByRole("link", { name: /Your Profile/ });
+    expect(link.getAttribute("href")).toBe("/profile");
+    expect(link.textContent).toMatch(/View and edit your traveler profile/);
+  });
 });
