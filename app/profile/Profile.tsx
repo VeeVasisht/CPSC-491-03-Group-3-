@@ -23,8 +23,11 @@ import {
   DISPLAY_NAME_MAX,
   BIO_MAX,
 } from "../models/userProfile";
+import type { FeedPost } from "../models/feed";
+import { getPostsByAuthor } from "../services/userPostsService";
+import { ProfilePostGrid } from "../components/profile/ProfilePostGrid";
 
-const pageClass = "mx-auto max-w-2xl px-6 py-12";
+const pageClass = "mx-auto max-w-3xl px-6 py-12";
 const cardClass =
   "rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8 dark:border-gray-700 dark:bg-gray-800";
 const primaryButton =
@@ -62,6 +65,10 @@ export function Profile() {
   const [saveError, setSaveError] = useState<string>("");
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // The user's own posts, shown as a grid under the profile card.
+  const [posts, setPosts] = useState<FeedPost[] | null>(null);
+  const [postsError, setPostsError] = useState("");
+
   async function load() {
     setState({ kind: "loading" });
     const result = await getCurrentProfile();
@@ -77,6 +84,21 @@ export function Profile() {
   useEffect(() => {
     load();
   }, []);
+
+  async function loadPosts(uid: string) {
+    setPosts(null);
+    setPostsError("");
+    try {
+      setPosts(await getPostsByAuthor(uid));
+    } catch {
+      setPostsError("Couldn't load your posts. Please try again.");
+    }
+  }
+
+  const loadedUid = state.kind === "loaded" ? state.profile.uid : null;
+  useEffect(() => {
+    if (loadedUid) loadPosts(loadedUid);
+  }, [loadedUid]);
 
   function startEditing(profile: UserProfile) {
     setForm({ displayName: profile.displayName, bio: profile.bio });
@@ -189,6 +211,14 @@ export function Profile() {
               <h1 className="text-2xl font-bold break-words sm:text-3xl text-gray-900 dark:text-white">
                 {profile.displayName}
               </h1>
+              {posts && (
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {posts.length}
+                  </span>{" "}
+                  {posts.length === 1 ? "post" : "posts"}
+                </p>
+              )}
             </div>
 
             <button
@@ -211,6 +241,30 @@ export function Profile() {
               </p>
             )}
           </div>
+        </section>
+
+        <section aria-labelledby="posts-heading" className="mt-10">
+          <h2
+            id="posts-heading"
+            className="mb-4 text-lg font-semibold text-gray-900 dark:text-white"
+          >
+            Posts
+          </h2>
+          {postsError ? (
+            <div role="alert" className="text-sm text-red-600 dark:text-red-400">
+              <p>{postsError}</p>
+              <button
+                onClick={() => loadPosts(profile.uid)}
+                className={`${secondaryButton} mt-3`}
+              >
+                Retry
+              </button>
+            </div>
+          ) : posts === null ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">Loading posts…</p>
+          ) : (
+            <ProfilePostGrid posts={posts} authorName={profile.displayName} />
+          )}
         </section>
       </main>
     );
