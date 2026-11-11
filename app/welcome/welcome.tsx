@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { UserRound, KeyRound, SquarePen, Map, Newspaper, CircleUser } from "lucide-react";
+import { UserRound, KeyRound, SquarePen, Map, Newspaper, CircleUser, Luggage } from "lucide-react";
 
 /**
  * Defines the pages displayed as navigation cards on the home page.
