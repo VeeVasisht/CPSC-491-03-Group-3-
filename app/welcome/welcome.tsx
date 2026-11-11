@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { UserRound, KeyRound, SquarePen, Map, Newspaper, Luggage } from "lucide-react";
+import { UserRound, KeyRound, SquarePen, Map, Newspaper, CircleUser } from "lucide-react";
 
 /**
  * Defines the pages displayed as navigation cards on the home page.
@@ -7,6 +7,12 @@ import { UserRound, KeyRound, SquarePen, Map, Newspaper, Luggage } from "lucide-
  * The Welcome component uses this array to dynamically generate the cards.
  */
 const pages = [
+  {
+    title: "Your Profile",
+    description: "View and edit your traveler profile.",
+    path: "/profile",
+    icon: CircleUser,
+  },
   {
     title: "Account Settings",
     description: "Manage your account and profile settings.",
