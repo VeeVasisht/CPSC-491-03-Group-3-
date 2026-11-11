@@ -1,7 +1,5 @@
 import type { Route } from "./+types/registration";
 import { Registration } from "../registration/Registration";
-import { firebaseUI } from "~/firebase/firebaseUI";
-import { FirebaseUIProvider } from "@firebase-oss/ui-react";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -11,9 +9,5 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function RegistrationPage() {
-  return (
-    <FirebaseUIProvider ui={firebaseUI}>
-      <Registration />
-    </FirebaseUIProvider>
-  );
+  return <Registration />;
 }
