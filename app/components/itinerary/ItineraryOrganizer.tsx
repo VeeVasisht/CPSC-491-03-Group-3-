@@ -40,6 +40,11 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
     setItineraries([]);
     setSelectedId("");
     setDirtyIds([]);
+    setNewTitle("");
+    setName("");
+    setLatitude("");
+    setLongitude("");
+    setPostId("");
     listTripItineraries(tripId)
       .then((result) => {
         if (!active) return;
@@ -52,6 +57,13 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
       .finally(() => { if (active) setBusy(false); });
     return () => { active = false; };
   }, [tripId]);
+
+  function resetDestinationForm() {
+    setName("");
+    setLatitude("");
+    setLongitude("");
+    setPostId("");
+  }
 
   function updateSelected(destinations: ItineraryDestination[]) {
     setItineraries((current) => current.map((item) =>
@@ -74,6 +86,7 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
     setItineraries((current) => [...current, itinerary]);
     setSelectedId(itinerary.id);
     setDirtyIds((current) => [...current, itinerary.id]);
+    resetDestinationForm();
     setNewTitle("");
     setError("");
     setNotice("Itinerary created locally. Select Save itinerary to keep it.");
@@ -89,7 +102,7 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
         postId: postId.trim() || null,
       };
       updateSelected(addDestination(selected.destinations, destination));
-      setName(""); setLatitude(""); setLongitude(""); setPostId("");
+      resetDestinationForm();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to add destination.");
     }
@@ -115,6 +128,7 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
       const remaining = itineraries.filter((item) => item.id !== selected.id);
       setItineraries(remaining);
       setSelectedId(remaining[0]?.id ?? "");
+      resetDestinationForm();
       setDirtyIds((current) => current.filter((id) => id !== selected.id));
       setNotice("Itinerary deleted.");
     } catch (err) {
@@ -145,7 +159,7 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
           <button type="button" className="w-full rounded-lg bg-blue-700 px-4 py-2 text-white hover:bg-blue-800 disabled:opacity-50" disabled={busy} onClick={createItinerary}>Create itinerary</button>
           <label className="block text-sm" htmlFor="choose-itinerary">Choose itinerary
             <select id="choose-itinerary" className={inputStyle} value={selectedId} onChange={(event) => {
-              setSelectedId(event.target.value); setError(""); setNotice("");
+              setSelectedId(event.target.value); resetDestinationForm(); setError(""); setNotice("");
             }}>
               <option value="">Select an itinerary</option>
               {itineraries.map((item) => <option key={item.id} value={item.id}>{item.title}{dirtyIds.includes(item.id) ? " *" : ""}</option>)}

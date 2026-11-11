@@ -30,10 +30,7 @@ function AuthenticatedItineraries() {
     setError("");
     setTrips([]);
     setSelectedId(tripId ?? "");
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
 
     const promise = tripId
       ? getDoc(doc(db, "trips", tripId)).then((snapshot) => {
@@ -72,7 +69,12 @@ function AuthenticatedItineraries() {
     };
   }, [tripId, user?.uid]);
 
-  if (!user) return null;
+  if (!user)
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-7 text-gray-900 dark:text-gray-100">
+        <p role="status">Checking your session…</p>
+      </main>
+    );
   const selected = trips.find((item) => item.id === selectedId);
 
   return (

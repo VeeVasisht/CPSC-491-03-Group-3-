@@ -98,14 +98,22 @@ export default function TripDetail() {
 
   async function save(input: TripInput) {
     if (!tripId) return;
+    setError("");
     try {
       await updateTrip(tripId, input);
-      setTrip(await getTripById(tripId));
-      setEditing(false);
-    } catch {
-      console.error(
-        "Trip updated but navigation failed. Please refresh the page to view your trip.",
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? `Unable to save your changes: ${e.message}`
+          : "Unable to save your changes. Check your connection and permissions, then try again.",
       );
+      return;
+    }
+    setEditing(false);
+    try {
+      setTrip(await getTripById(tripId));
+    } catch {
+      setTrip((current) => (current ? { ...current, ...input } : current));
     }
   }
 
