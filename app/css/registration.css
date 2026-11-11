@@ -1,5 +1,3 @@
-@import "@firebase-oss/ui-styles/dist.min.css";
-
 .registration-page {
     min-height: 100vh;
     display: flex;
