@@ -1,5 +1,6 @@
-
 import { useEffect, useState } from "react";
+import { OfflineItineraryStatus } from "./OfflineItineraryStatus";
+import { readOfflineItineraries, writeOfflineItineraries, upsertOfflineItinerary } from "../../services/offlineItineraryCache";
 
 import type {
   OrganizedItinerary,
@@ -35,6 +36,7 @@ export function ItineraryOrganizer({ userId }: Props) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [hasOfflineCopy, setHasOfflineCopy] = useState(false);
 
   const selected = trips.find(
     (trip) => trip.id === selectedId,
@@ -44,16 +46,28 @@ export function ItineraryOrganizer({ userId }: Props) {
     let active = true;
 
     setBusy(true);
+    const cached = readOfflineItineraries(userId);
+    setTrips(cached);
+    setSelectedId(cached[0]?.id ?? "");
+    setHasOfflineCopy(cached.length > 0);
+    if (!navigator.onLine) {
+      setNotice(cached.length ? "Showing saved offline trips." : "No saved offline trips available.");
+      setBusy(false);
+      return () => { active = false; };
+    }
 
     listOrganizedItineraries(userId)
       .then((result) => {
         if (active) {
           setTrips(result);
           setSelectedId(result[0]?.id ?? "");
+          const stored = writeOfflineItineraries(userId, result);
+          setHasOfflineCopy(stored && result.length > 0);
         }
       })
       .catch((err: unknown) => {
         if (active) {
+          setNotice(cached.length ? "Unable to refresh. Showing saved offline trips." : "");
           setError(
             err instanceof Error
               ? err.message
@@ -157,6 +171,10 @@ export function ItineraryOrganizer({ userId }: Props) {
 
   async function save() {
     if (!selected) return;
+    if (!navigator.onLine) {
+      setError("Offline — connect to the internet to save changes to Firestore.");
+      return;
+    }
 
     setBusy(true);
     setError("");
@@ -167,7 +185,9 @@ export function ItineraryOrganizer({ userId }: Props) {
         userId,
         selected,
       );
-      setNotice("Itinerary saved.");
+      const cached = upsertOfflineItinerary(userId, selected);
+      setHasOfflineCopy(cached);
+      setNotice(cached ? "Itinerary saved. Offline copy updated." : "Itinerary saved. Offline copy unavailable.");
     } catch (err) {
       setError(
         err instanceof Error
@@ -181,6 +201,7 @@ export function ItineraryOrganizer({ userId }: Props) {
 
   return (
     <main className="mx-auto max-w-3xl space-y-5 p-6">
+      <OfflineItineraryStatus cached={hasOfflineCopy} />
       <h1 className="text-2xl font-bold">
         Itinerary Organizer
       </h1>
@@ -320,6 +341,7 @@ export function ItineraryOrganizer({ userId }: Props) {
               Add destination
             </button>
 
+            <p className="text-sm">Saved destination names and coordinates remain visible offline. Live maps require a connection unless map tiles are separately cached.</p>
             <ol className="space-y-2">
               {selected.destinations.map(
                 (item, index) => (
