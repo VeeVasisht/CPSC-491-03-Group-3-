@@ -10,7 +10,7 @@ import {
   validatePassword,
   type PasswordValidationStatus,
 } from "firebase/auth";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { auth } from "../firebase/firebase";
 import { ensureUserProfile } from "../firebase/auth";
@@ -338,7 +338,7 @@ export function Registration() {
 
         <footer className="registration-footer">
           <p>
-            Already have an account? <a href="/login">Log in</a>
+            Already have an account? <Link to="/login">Log in</Link>
           </p>
         </footer>
       </section>
