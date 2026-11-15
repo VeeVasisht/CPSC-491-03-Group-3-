@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 import { Link } from "react-router";
@@ -21,7 +22,6 @@ export function MainNav() {
 
     try {
       await signOut();
-
     } catch (error) {
       const message =
         error instanceof Error
@@ -50,6 +50,13 @@ export function MainNav() {
             className="text-sm font-medium hover:underline"
           >
             Feed
+          </Link>
+
+          <Link
+            to="/itineraries"
+            className="text-sm font-medium hover:underline"
+          >
+            Itineraries
           </Link>
 
           {user?.email && (

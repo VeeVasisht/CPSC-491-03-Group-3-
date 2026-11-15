@@ -1,6 +1,8 @@
 // app/routes/profile.tsx
 
 import type { Route } from "./+types/profile";
+import { RequireAuth } from "~/components/auth/RequireAuth";
+import { MainNav } from "~/components/navigation/MainNav";
 import { Profile } from "../profile/Profile";
 
 export function meta({}: Route.MetaArgs) {
@@ -11,5 +13,10 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function ProfileRoute() {
-  return <Profile />;
+  return (
+    <RequireAuth>
+      <MainNav />
+      <Profile />
+    </RequireAuth>
+  );
 }
