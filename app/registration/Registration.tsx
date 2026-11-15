@@ -128,16 +128,9 @@ export function Registration() {
     let newUser: import("firebase/auth").User | null = null;
     let profileCreated = false;
     try {
-      if (auth.emulatorConfig !== null) {
-        // The Auth emulator does not support validatePassword().
-        const localErrors = validateLocalPassword(password);
-
-        if (localErrors.length > 0) {
-          setError(localErrors.join(" "));
-          return;
-        }
-      } else {
-        // Production: validate against the Firebase project's password policy.
+      // The Auth emulator does not support validatePassword(), so the policy
+      // check only runs against production.
+      if (auth.emulatorConfig === null) {
         const policy = await validatePassword(auth, password);
 
         if (!policy.isValid) {
@@ -146,6 +139,7 @@ export function Registration() {
         }
       }
 
+      // Local rules apply in every environment (the only check for the emulator).
       const errors = validateLocalPassword(password);
 
       if (errors.length > 0) {
@@ -258,41 +252,41 @@ export function Registration() {
             </label>
 
             <div className="registration-field">
-    <label htmlFor="password">Password</label>
+              <label htmlFor="password">Password</label>
 
-    <div className="relative w-full">
-        <input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
-            required
-            placeholder="Enter your password"
-            className="
+              <div className="relative w-full">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  required
+                  placeholder="Enter your password"
+                  className="
                 block w-full rounded-md border border-gray-400
                 bg-transparent px-3 py-2 pr-12
                 text-white placeholder:text-gray-400
                 focus:border-blue-400 focus:outline-none
                 focus:ring-1 focus:ring-blue-400
             "
-        />
+                />
 
-        <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            aria-label={showPassword ? "Hide password" : "Show password"}
-            aria-pressed={showPassword}
-            className="
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  className="
                 absolute inset-y-0 right-3
                 flex items-center justify-center
                 text-gray-400 hover:text-white
             "
-        >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-        </button>
-    </div>
-</div>
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
 
             <label className="flex flex-col gap-1">
               <span>Confirm password</span>
@@ -315,15 +309,18 @@ export function Registration() {
               </p>
             )}
             {notice && (
-              <p
+              <div
                 role="status"
                 className="text-sm text-green-700 dark:text-green-400"
               >
-                {notice}
-              {awaitingVerification && (
-                <span className="block mt-1">Once you verify your email, this page will automatically take you home.</span>
-              )}
-              </p>
+                <span>{notice}</span>
+                {awaitingVerification && (
+                  <span className="block mt-1">
+                    Once you verify your email, this page will automatically
+                    take you home.
+                  </span>
+                )}
+              </div>
             )}
 
             <button
