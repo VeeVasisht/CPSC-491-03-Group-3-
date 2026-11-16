@@ -1,106 +1,3 @@
-import { useEffect, useState } from "react";
-import {
-  addDestination,
-  moveDestination,
-  removeDestination,
-  type OrganizedItinerary,
-  type ItineraryDestination,
-} from "../../models/itinerary";
-import {
-  deleteTripItinerary,
-  listTripItineraries,
-  saveTripItinerary,
-} from "../../services/tripItineraryService";
-
-interface Props {
-  tripId: string;
-  tripTitle: string;
-}
-
-export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
-  const [itineraries, setItineraries] = useState<OrganizedItinerary[]>([]);
-  const [selectedId, setSelectedId] = useState("");
-  const [newTitle, setNewTitle] = useState("");
-  const [name, setName] = useState("");
-  const [latitude, setLatitude] = useState("");
-  const [longitude, setLongitude] = useState("");
-  const [postId, setPostId] = useState("");
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [dirtyIds, setDirtyIds] = useState<string[]>([]);
-
-  const selected = itineraries.find((item) => item.id === selectedId);
-
-  useEffect(() => {
-    let active = true;
-    setBusy(true);
-    setError("");
-    setNotice("");
-    setItineraries([]);
-    setSelectedId("");
-    setDirtyIds([]);
-    setNewTitle("");
-    setName("");
-    setLatitude("");
-    setLongitude("");
-    setPostId("");
-    listTripItineraries(tripId)
-      .then((result) => {
-        if (!active) return;
-        setItineraries(result);
-        setSelectedId(result[0]?.id ?? "");
-      })
-      .catch((err: unknown) => {
-        if (active) setError(err instanceof Error ? err.message : "Unable to load itineraries.");
-      })
-      .finally(() => { if (active) setBusy(false); });
-    return () => { active = false; };
-  }, [tripId]);
-
-  function resetDestinationForm() {
-    setName("");
-    setLatitude("");
-    setLongitude("");
-    setPostId("");
-  }
-
-  function updateSelected(destinations: ItineraryDestination[]) {
-    setItineraries((current) => current.map((item) =>
-      item.id === selectedId ? { ...item, destinations } : item,
-    ));
-    setDirtyIds((current) => current.includes(selectedId) ? current : [...current, selectedId]);
-    setNotice("Unsaved changes. Select Save itinerary.");
-    setError("");
-  }
-
-  function createItinerary() {
-    const title = newTitle.trim();
-    if (!title || title.length > 100) {
-      setError("Itinerary title must be 1–100 characters.");
-      return;
-    }
-    const itinerary: OrganizedItinerary = {
-      id: crypto.randomUUID(), title, destinations: [],
-    };
-    setItineraries((current) => [...current, itinerary]);
-    setSelectedId(itinerary.id);
-    setDirtyIds((current) => [...current, itinerary.id]);
-    resetDestinationForm();
-    setNewTitle("");
-    setError("");
-    setNotice("Itinerary created locally. Select Save itinerary to keep it.");
-  }
-
-  function addLocation() {
-    if (!selected) return;
-    try {
-      if (!latitude.trim() || !longitude.trim()) throw new Error("Enter both coordinates.");
-      const destination: ItineraryDestination = {
-        id: crypto.randomUUID(),
-        location: { name, latitude: Number(latitude), longitude: Number(longitude) },
-        postId: postId.trim() || null,
-      };
       updateSelected(addDestination(selected.destinations, destination));
       resetDestinationForm();
     } catch (err) {
@@ -110,11 +7,17 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
 
   async function save() {
     if (!selected) return;
+    if (!navigator.onLine) {
+      setError("Offline — connect to the internet to save changes to Firestore.");
+      return;
+    }
     setBusy(true); setError(""); setNotice("");
     try {
       await saveTripItinerary(tripId, selected);
       setDirtyIds((current) => current.filter((id) => id !== selected.id));
-      setNotice("Itinerary saved to this trip.");
+      const cached = cacheKey ? upsertOfflineItinerary(cacheKey, selected) : false;
+      setHasOfflineCopy(cached);
+      setNotice(cached ? "Itinerary saved. Offline copy updated." : "Itinerary saved to this trip. Offline copy unavailable.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save itinerary.");
     } finally { setBusy(false); }
@@ -130,6 +33,10 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
       setSelectedId(remaining[0]?.id ?? "");
       resetDestinationForm();
       setDirtyIds((current) => current.filter((id) => id !== selected.id));
+      if (cacheKey) {
+        const stored = writeOfflineItineraries(cacheKey, remaining);
+        setHasOfflineCopy(stored && remaining.length > 0);
+      }
       setNotice("Itinerary deleted.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to delete itinerary.");
@@ -141,6 +48,7 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
 
   return (
     <section className="mx-auto max-w-5xl space-y-6 px-4 py-8 text-gray-900 dark:text-gray-100">
+      <OfflineItineraryStatus cached={hasOfflineCopy} />
       <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-violet-700 p-7 text-white shadow-lg">
         <p className="text-sm font-medium text-blue-100">{tripTitle}</p>
         <h2 className="mt-1 text-3xl font-bold">Trip Itineraries</h2>
@@ -181,6 +89,7 @@ export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
               <label className="text-sm">Longitude<input type="number" step="any" className={inputStyle} value={longitude} onChange={(event) => setLongitude(event.target.value)} /></label>
             </div>
             <button type="button" disabled={busy} className={secondaryButton} onClick={addLocation}>Add destination</button>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Cached destination names and coordinates can be viewed offline. Map tiles are not downloaded.</p>
             <ol className="space-y-2">
               {selected.destinations.map((item, index) => <li key={item.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 p-3 dark:border-gray-600">
                 <span className="min-w-40 flex-1 text-sm">{index + 1}. {item.location.name} ({item.location.latitude}, {item.location.longitude})</span>
