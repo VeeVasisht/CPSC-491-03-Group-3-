@@ -199,8 +199,8 @@ service cloud.firestore {
     // A nested itinerary inherits access rights from its parent trip.
     function ownsTrip(tripId) {
       return isSignedIn()
-        && exists(/databases/$(database)/documents/trips/$(tripId))
-        && get(/databases/$(database)/documents/trips/$(tripId)).data.ownerId == request.auth.uid;
+        && ((exists(/databases/$(database)/documents/trips/$(tripId)))
+          && (get(/databases/$(database)/documents/trips/$(tripId)).data.ownerId == request.auth.uid));
     }
 
     function validItinerary(data) {
