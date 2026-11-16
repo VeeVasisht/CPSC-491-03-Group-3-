@@ -1,34 +1,38 @@
-import { useEffect, useState } from "react";
-import { OfflineItineraryStatus } from "./OfflineItineraryStatus";
-import { readOfflineItineraries, writeOfflineItineraries, upsertOfflineItinerary } from "../../services/offlineItineraryCache";
 
-import type {
-  OrganizedItinerary,
-  ItineraryDestination,
-} from "../../models/itinerary";
+import { useEffect, useState } from "react";
+import { getAuth } from "firebase/auth";
+
+import { OfflineItineraryStatus } from "./OfflineItineraryStatus";
+
+import {
+  readOfflineItineraries,
+  writeOfflineItineraries,
+  upsertOfflineItinerary,
+} from "../../services/offlineItineraryCache";
 
 import {
   addDestination,
   moveDestination,
   removeDestination,
+  type OrganizedItinerary,
+  type ItineraryDestination,
 } from "../../models/itinerary";
 
 import {
-  listOrganizedItineraries,
-  saveOrganizedItinerary,
-} from "../../services/itineraryOrganizationService";
+  deleteTripItinerary,
+  listTripItineraries,
+  saveTripItinerary,
+} from "../../services/tripItineraryService";
 
 interface Props {
-  userId: string;
+  tripId: string;
+  tripTitle: string;
 }
 
-export function ItineraryOrganizer({ userId }: Props) {
-  const [trips, setTrips] = useState<
-    OrganizedItinerary[]
-  >([]);
-
+export function ItineraryOrganizer({ tripId, tripTitle }: Props) {
+  const [itineraries, setItineraries] = useState<OrganizedItinerary[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [tripName, setTripName] = useState("");
+  const [newTitle, setNewTitle] = useState("");
   const [name, setName] = useState("");
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
@@ -36,42 +40,80 @@ export function ItineraryOrganizer({ userId }: Props) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [dirtyIds, setDirtyIds] = useState<string[]>([]);
   const [hasOfflineCopy, setHasOfflineCopy] = useState(false);
 
-  const selected = trips.find(
-    (trip) => trip.id === selectedId,
-  );
+  const selected = itineraries.find((item) => item.id === selectedId);
+
+  // Separate cached itineraries by authenticated user and trip.
+  const userId = getAuth().currentUser?.uid;
+  const cacheKey = userId ? `${userId}:${tripId}` : null;
 
   useEffect(() => {
     let active = true;
 
     setBusy(true);
-    const cached = readOfflineItineraries(userId);
-    setTrips(cached);
+    setError("");
+    setNotice("");
+    setItineraries([]);
+    setSelectedId("");
+    setDirtyIds([]);
+    setNewTitle("");
+    setName("");
+    setLatitude("");
+    setLongitude("");
+    setPostId("");
+
+    const cached = cacheKey
+      ? readOfflineItineraries(cacheKey)
+      : [];
+
+    setItineraries(cached);
     setSelectedId(cached[0]?.id ?? "");
     setHasOfflineCopy(cached.length > 0);
+
     if (!navigator.onLine) {
-      setNotice(cached.length ? "Showing saved offline trips." : "No saved offline trips available.");
+      setNotice(
+        cached.length
+          ? "Showing cached itineraries."
+          : "No cached itineraries available."
+      );
+
       setBusy(false);
-      return () => { active = false; };
+
+      return () => {
+        active = false;
+      };
     }
 
-    listOrganizedItineraries(userId)
+    listTripItineraries(tripId)
       .then((result) => {
-        if (active) {
-          setTrips(result);
-          setSelectedId(result[0]?.id ?? "");
-          const stored = writeOfflineItineraries(userId, result);
+        if (!active) return;
+
+        setItineraries(result);
+        setSelectedId(result[0]?.id ?? "");
+
+        if (cacheKey) {
+          const stored = writeOfflineItineraries(
+            cacheKey,
+            result
+          );
+
           setHasOfflineCopy(stored && result.length > 0);
         }
       })
       .catch((err: unknown) => {
-        if (active) {
-          setNotice(cached.length ? "Unable to refresh. Showing saved offline trips." : "");
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Unable to load itineraries.",
+        if (!active) return;
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load itineraries."
+        );
+
+        if (cached.length > 0) {
+          setNotice(
+            "Unable to refresh. Showing cached itineraries."
           );
         }
       })
@@ -82,47 +124,66 @@ export function ItineraryOrganizer({ userId }: Props) {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [tripId, cacheKey]);
+
+  function resetDestinationForm() {
+    setName("");
+    setLatitude("");
+    setLongitude("");
+    setPostId("");
+  }
 
   function updateSelected(
-    destinations: ItineraryDestination[],
+    destinations: ItineraryDestination[]
   ) {
-    setTrips((current) =>
-      current.map((trip) =>
-        trip.id === selectedId
-          ? { ...trip, destinations }
-          : trip,
-      ),
+    setItineraries((current) =>
+      current.map((item) =>
+        item.id === selectedId
+          ? { ...item, destinations }
+          : item
+      )
     );
 
-    setNotice(
-      "Unsaved changes. Select Save itinerary.",
+    setDirtyIds((current) =>
+      current.includes(selectedId)
+        ? current
+        : [...current, selectedId]
     );
+
+    setNotice("Unsaved changes. Select Save itinerary.");
     setError("");
   }
 
-  function createTrip() {
-    const title = tripName.trim();
+  function createItinerary() {
+    const title = newTitle.trim();
 
     if (!title || title.length > 100) {
       setError(
-        "Trip title must be 1–100 characters.",
+        "Itinerary title must be 1–100 characters."
       );
       return;
     }
 
-    const trip: OrganizedItinerary = {
+    const itinerary: OrganizedItinerary = {
       id: crypto.randomUUID(),
       title,
       destinations: [],
     };
 
-    setTrips((current) => [...current, trip]);
-    setSelectedId(trip.id);
-    setTripName("");
+    setItineraries((current) => [...current, itinerary]);
+    setSelectedId(itinerary.id);
+
+    setDirtyIds((current) => [
+      ...current,
+      itinerary.id,
+    ]);
+
+    resetDestinationForm();
+    setNewTitle("");
     setError("");
+
     setNotice(
-      "New trip created locally. Select Save itinerary to keep it.",
+      "Itinerary created locally. Select Save itinerary to keep it."
     );
   }
 
@@ -130,6 +191,10 @@ export function ItineraryOrganizer({ userId }: Props) {
     if (!selected) return;
 
     try {
+      if (!latitude.trim() || !longitude.trim()) {
+        throw new Error("Enter both coordinates.");
+      }
+
       const destination: ItineraryDestination = {
         id: crypto.randomUUID(),
         location: {
@@ -140,39 +205,30 @@ export function ItineraryOrganizer({ userId }: Props) {
         postId: postId.trim() || null,
       };
 
-      if (
-        !latitude.trim() ||
-        !longitude.trim()
-      ) {
-        throw new Error(
-          "Enter both coordinates.",
-        );
-      }
-
       updateSelected(
         addDestination(
           selected.destinations,
-          destination,
-        ),
+          destination
+        )
       );
 
-      setName("");
-      setLatitude("");
-      setLongitude("");
-      setPostId("");
+      resetDestinationForm();
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to add destination.",
+          : "Unable to add destination."
       );
     }
   }
 
   async function save() {
     if (!selected) return;
+
     if (!navigator.onLine) {
-      setError("Offline — connect to the internet to save changes to Firestore.");
+      setError(
+        "Offline — connect to the internet to save changes to Firestore."
+      );
       return;
     }
 
@@ -181,250 +237,403 @@ export function ItineraryOrganizer({ userId }: Props) {
     setNotice("");
 
     try {
-      await saveOrganizedItinerary(
-        userId,
-        selected,
+      await saveTripItinerary(tripId, selected);
+
+      setDirtyIds((current) =>
+        current.filter((id) => id !== selected.id)
       );
-      const cached = upsertOfflineItinerary(userId, selected);
-      setHasOfflineCopy(cached);
-      setNotice(cached ? "Itinerary saved. Offline copy updated." : "Itinerary saved. Offline copy unavailable.");
+
+      const cached = cacheKey
+        ? upsertOfflineItinerary(cacheKey, selected)
+        : false;
+
+      setHasOfflineCopy(
+        cached || hasOfflineCopy
+      );
+
+      setNotice(
+        cached
+          ? "Itinerary saved. Offline copy updated."
+          : "Itinerary saved to this trip. Offline copy unavailable."
+      );
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Unable to save itinerary.",
+          : "Unable to save itinerary."
       );
     } finally {
       setBusy(false);
     }
   }
 
-  return (
-    <main className="mx-auto max-w-3xl space-y-5 p-6">
-      <OfflineItineraryStatus cached={hasOfflineCopy} />
-      <h1 className="text-2xl font-bold">
-        Itinerary Organizer
-      </h1>
+  async function removeItinerary() {
+    if (!selected) return;
 
-      <p>
-        Organize destinations for your trips.
-        Changes are saved when you select
-        Save itinerary.
-      </p>
+    if (!navigator.onLine) {
+      setError(
+        "Offline — connect to the internet to delete an itinerary."
+      );
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Delete itinerary "${selected.title}"?`
+      )
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    setNotice("");
+
+    try {
+      await deleteTripItinerary(tripId, selected.id);
+
+      const remaining = itineraries.filter(
+        (item) => item.id !== selected.id
+      );
+
+      setItineraries(remaining);
+      setSelectedId(remaining[0]?.id ?? "");
+      resetDestinationForm();
+
+      setDirtyIds((current) =>
+        current.filter((id) => id !== selected.id)
+      );
+
+      if (cacheKey) {
+        const stored = writeOfflineItineraries(
+          cacheKey,
+          remaining.filter(
+            (item) => !dirtyIds.includes(item.id)
+          )
+        );
+
+        setHasOfflineCopy(
+          stored &&
+          remaining.some(
+            (item) => !dirtyIds.includes(item.id)
+          )
+        );
+      }
+
+      setNotice("Itinerary deleted.");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to delete itinerary."
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const inputStyle =
+    "mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white";
+
+  const secondaryButton =
+    "rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700";
+
+  return (
+    <section className="mx-auto max-w-5xl space-y-6 px-4 py-8 text-gray-900 dark:text-gray-100">
+      <OfflineItineraryStatus cached={hasOfflineCopy} />
+
+      <div className="rounded-2xl bg-gradient-to-r from-blue-700 to-violet-700 p-7 text-white shadow-lg">
+        <p className="text-sm font-medium text-blue-100">
+          {tripTitle}
+        </p>
+
+        <h2 className="mt-1 text-3xl font-bold">
+          Trip Itineraries
+        </h2>
+
+        <p className="mt-2 text-blue-100">
+          Create multiple itineraries and organize
+          destinations within each one.
+        </p>
+      </div>
 
       {error && (
-        <p role="alert" className="text-red-600">
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 p-3 text-red-700 dark:bg-red-950 dark:text-red-200"
+        >
           {error}
         </p>
       )}
 
       {notice && (
-        <p role="status">
+        <p
+          role="status"
+          className="rounded-lg bg-blue-50 p-3 text-blue-800 dark:bg-blue-950 dark:text-blue-200"
+        >
           {notice}
         </p>
       )}
 
-      <section className="space-y-2">
-        <label htmlFor="trip-name">
-          New trip name
-        </label>
+      <div className="grid gap-6 md:grid-cols-[280px_1fr]">
+        <aside className="space-y-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          <h3 className="font-semibold">
+            Itineraries for this trip
+          </h3>
 
-        <input
-          id="trip-name"
-          className="border p-2"
-          maxLength={100}
-          value={tripName}
-          onChange={(e) =>
-            setTripName(e.target.value)
-          }
-        />
+          <label
+            className="block text-sm"
+            htmlFor="new-itinerary-title"
+          >
+            New itinerary name
 
-        <button
-          className="border rounded p-2"
-          type="button"
-          onClick={createTrip}
-        >
-          Create trip
-        </button>
-      </section>
+            <input
+              id="new-itinerary-title"
+              className={inputStyle}
+              maxLength={100}
+              value={newTitle}
+              onChange={(event) =>
+                setNewTitle(event.target.value)
+              }
+              placeholder="e.g. Day trips"
+            />
+          </label>
 
-      <section className="space-y-3">
-        <label htmlFor="trip-select">
-          Choose itinerary
-        </label>
+          <button
+            type="button"
+            className="w-full rounded-lg bg-blue-700 px-4 py-2 text-white hover:bg-blue-800 disabled:opacity-50"
+            disabled={busy}
+            onClick={createItinerary}
+          >
+            Create itinerary
+          </button>
 
-        <select
-          id="trip-select"
-          className="border p-2"
-          value={selectedId}
-          onChange={(e) => {
-            setSelectedId(e.target.value);
-            setError("");
-            setNotice("");
-          }}
-        >
-          <option value="">
-            Select a trip
-          </option>
+          <label
+            className="block text-sm"
+            htmlFor="choose-itinerary"
+          >
+            Choose itinerary
 
-          {trips.map((trip) => (
-            <option
-              key={trip.id}
-              value={trip.id}
+            <select
+              id="choose-itinerary"
+              className={inputStyle}
+              value={selectedId}
+              onChange={(event) => {
+                setSelectedId(event.target.value);
+                resetDestinationForm();
+                setError("");
+                setNotice("");
+              }}
             >
-              {trip.title}
-            </option>
-          ))}
-        </select>
+              <option value="">
+                Select an itinerary
+              </option>
 
-        {selected && (
-          <>
-            <h2 className="text-xl font-semibold">
-              {selected.title}
-            </h2>
+              {itineraries.map((item) => (
+                <option
+                  key={item.id}
+                  value={item.id}
+                >
+                  {item.title}
+                  {dirtyIds.includes(item.id)
+                    ? " *"
+                    : ""}
+                </option>
+              ))}
+            </select>
+          </label>
 
-            <div className="grid gap-2 sm:grid-cols-2">
-              <label>
-                Location name
-                <input
-                  className="block border p-2"
-                  value={name}
-                  onChange={(e) =>
-                    setName(e.target.value)
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            * indicates unsaved changes.
+            Save before leaving this trip.
+          </p>
+        </aside>
+
+        <div className="space-y-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+          {!selected ? (
+            <p className="py-12 text-center text-gray-500 dark:text-gray-400">
+              Create or select an itinerary to start
+              adding destinations.
+            </p>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-xl font-bold">
+                  {selected.title}
+                </h3>
+
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() =>
+                    void removeItinerary()
                   }
-                />
-              </label>
+                  className="text-sm font-medium text-red-600 hover:underline disabled:opacity-50 dark:text-red-400"
+                >
+                  Delete itinerary
+                </button>
+              </div>
 
-              <label>
-                Latitude
-                <input
-                  className="block border p-2"
-                  type="number"
-                  step="any"
-                  value={latitude}
-                  onChange={(e) =>
-                    setLatitude(e.target.value)
-                  }
-                />
-              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-sm">
+                  Location name
 
-              <label>
-                Longitude
-                <input
-                  className="block border p-2"
-                  type="number"
-                  step="any"
-                  value={longitude}
-                  onChange={(e) =>
-                    setLongitude(e.target.value)
-                  }
-                />
-              </label>
+                  <input
+                    className={inputStyle}
+                    value={name}
+                    onChange={(event) =>
+                      setName(event.target.value)
+                    }
+                  />
+                </label>
 
-              <label>
-                Related post ID (optional)
-                <input
-                  className="block border p-2"
-                  value={postId}
-                  onChange={(e) =>
-                    setPostId(e.target.value)
-                  }
-                />
-              </label>
-            </div>
+                <label className="text-sm">
+                  Related post ID (optional)
 
-            <button
-              type="button"
-              className="border rounded p-2"
-              onClick={addLocation}
-            >
-              Add destination
-            </button>
+                  <input
+                    className={inputStyle}
+                    value={postId}
+                    onChange={(event) =>
+                      setPostId(event.target.value)
+                    }
+                  />
+                </label>
 
-            <p className="text-sm">Saved destination names and coordinates remain visible offline. Live maps require a connection unless map tiles are separately cached.</p>
-            <ol className="space-y-2">
-              {selected.destinations.map(
-                (item, index) => (
-                  <li
-                    key={item.id}
-                    className="flex flex-wrap items-center gap-2 border rounded p-2"
-                  >
-                    <span className="flex-1">
-                      {index + 1}.{" "}
-                      {item.location.name} (
-                      {item.location.latitude},{" "}
-                      {item.location.longitude})
-                    </span>
+                <label className="text-sm">
+                  Latitude
 
-                    <button
-                      type="button"
-                      aria-label={`Move ${item.location.name} up`}
-                      disabled={index === 0}
-                      onClick={() =>
-                        updateSelected(
-                          moveDestination(
-                            selected.destinations,
-                            item.id,
-                            -1,
-                          ),
-                        )
-                      }
+                  <input
+                    type="number"
+                    step="any"
+                    className={inputStyle}
+                    value={latitude}
+                    onChange={(event) =>
+                      setLatitude(event.target.value)
+                    }
+                  />
+                </label>
+
+                <label className="text-sm">
+                  Longitude
+
+                  <input
+                    type="number"
+                    step="any"
+                    className={inputStyle}
+                    value={longitude}
+                    onChange={(event) =>
+                      setLongitude(event.target.value)
+                    }
+                  />
+                </label>
+              </div>
+
+              <button
+                type="button"
+                disabled={busy}
+                className={secondaryButton}
+                onClick={addLocation}
+              >
+                Add destination
+              </button>
+
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Cached destination names and coordinates
+                can be viewed offline. Map tiles are not
+                downloaded.
+              </p>
+
+              <ol className="space-y-2">
+                {selected.destinations.map(
+                  (item, index) => (
+                    <li
+                      key={item.id}
+                      className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 p-3 dark:border-gray-600"
                     >
-                      ↑
-                    </button>
+                      <span className="min-w-40 flex-1 text-sm">
+                        {index + 1}.{" "}
+                        {item.location.name} (
+                        {item.location.latitude},{" "}
+                        {item.location.longitude})
+                      </span>
 
-                    <button
-                      type="button"
-                      aria-label={`Move ${item.location.name} down`}
-                      disabled={
-                        index ===
-                        selected.destinations.length - 1
-                      }
-                      onClick={() =>
-                        updateSelected(
-                          moveDestination(
-                            selected.destinations,
-                            item.id,
-                            1,
-                          ),
-                        )
-                      }
-                    >
-                      ↓
-                    </button>
+                      <button
+                        type="button"
+                        className={secondaryButton}
+                        disabled={
+                          busy || index === 0
+                        }
+                        aria-label={`Move ${item.location.name} up`}
+                        onClick={() =>
+                          updateSelected(
+                            moveDestination(
+                              selected.destinations,
+                              item.id,
+                              -1
+                            )
+                          )
+                        }
+                      >
+                        ↑
+                      </button>
 
-                    <button
-                      type="button"
-                      aria-label={`Remove ${item.location.name}`}
-                      onClick={() =>
-                        updateSelected(
-                          removeDestination(
-                            selected.destinations,
-                            item.id,
-                          ),
-                        )
-                      }
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ),
-              )}
-            </ol>
+                      <button
+                        type="button"
+                        className={secondaryButton}
+                        disabled={
+                          busy ||
+                          index ===
+                            selected.destinations.length - 1
+                        }
+                        aria-label={`Move ${item.location.name} down`}
+                        onClick={() =>
+                          updateSelected(
+                            moveDestination(
+                              selected.destinations,
+                              item.id,
+                              1
+                            )
+                          )
+                        }
+                      >
+                        ↓
+                      </button>
 
-            <button
-              type="button"
-              disabled={busy}
-              className="rounded bg-blue-700 px-4 py-2 text-white disabled:opacity-50"
-              onClick={() => void save()}
-            >
-              {busy
-                ? "Saving..."
-                : "Save itinerary"}
-            </button>
-          </>
-        )}
-      </section>
-    </main>
+                      <button
+                        type="button"
+                        className={secondaryButton}
+                        disabled={busy}
+                        aria-label={`Remove ${item.location.name}`}
+                        onClick={() =>
+                          updateSelected(
+                            removeDestination(
+                              selected.destinations,
+                              item.id
+                            )
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  )
+                )}
+              </ol>
+
+              <button
+                type="button"
+                disabled={busy}
+                className="rounded-lg bg-blue-700 px-5 py-2 text-white hover:bg-blue-800 disabled:opacity-50"
+                onClick={() => void save()}
+              >
+                {busy
+                  ? "Saving..."
+                  : "Save itinerary"}
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
