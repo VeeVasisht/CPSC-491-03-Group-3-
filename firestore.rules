@@ -120,15 +120,17 @@ service cloud.firestore {
         && request.resource.data.authorId == request.auth.uid
 
         && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
+        && request.resource.data.title.matches('.*\\S.*')
         && request.resource.data.title.size() <= 100
 
         && request.resource.data.description is string
-        && request.resource.data.description.size() > 0
+        && request.resource.data.description.matches('.*\\S.*')
         && request.resource.data.description.size() <= 2000
 
         && request.resource.data.imageUrl is string
         && request.resource.data.imageUrl.size() > 0
+        && request.resource.data.imageUrl.size() <= 2048
+        && request.resource.data.imageUrl.matches('https://[^\\s]+')
 
         && request.resource.data.createdAt is timestamp
         && request.resource.data.createdAt == request.time
@@ -163,15 +165,17 @@ service cloud.firestore {
         && request.resource.data.createdAt == resource.data.createdAt
 
         && request.resource.data.title is string
-        && request.resource.data.title.size() > 0
+        && request.resource.data.title.matches('.*\\S.*')
         && request.resource.data.title.size() <= 100
 
         && request.resource.data.description is string
-        && request.resource.data.description.size() > 0
+        && request.resource.data.description.matches('.*\\S.*')
         && request.resource.data.description.size() <= 2000
 
         && request.resource.data.imageUrl is string
         && request.resource.data.imageUrl.size() > 0
+        && request.resource.data.imageUrl.size() <= 2048
+        && request.resource.data.imageUrl.matches('https://[^\\s]+')
 
         && request.resource.data.updatedAt is timestamp
         && request.resource.data.updatedAt == request.time;
@@ -195,8 +199,8 @@ service cloud.firestore {
     // A nested itinerary inherits access rights from its parent trip.
     function ownsTrip(tripId) {
       return isSignedIn()
-        && exists(/databases/$(database)/documents/trips/$(tripId))
-        && get(/databases/$(database)/documents/trips/$(tripId)).data.ownerId == request.auth.uid;
+        && ((exists(/databases/$(database)/documents/trips/$(tripId)))
+          && (get(/databases/$(database)/documents/trips/$(tripId)).data.ownerId == request.auth.uid));
     }
 
     function validItinerary(data) {
