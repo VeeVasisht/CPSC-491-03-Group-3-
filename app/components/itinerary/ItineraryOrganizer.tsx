@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { OfflineItineraryStatus } from "./OfflineItineraryStatus";
