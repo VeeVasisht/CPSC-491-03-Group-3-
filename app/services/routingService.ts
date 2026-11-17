@@ -1,9 +1,8 @@
 import type { Destination, RouteResult, RouteSegment, RouteCoordinate } from "~/models/route";
 import { validateRouteDestinations } from "~/models/route";
 
-
 function decodePolyline(encoded: string): RouteCoordinate[] {
-  let points: RouteCoordinate[] = [ ];
+  let points: RouteCoordinate[] = [];
   let index = 0, len = encoded.length;
   let lat = 0, lng = 0;
 
@@ -14,7 +13,7 @@ function decodePolyline(encoded: string): RouteCoordinate[] {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    let dlat = ((result & 1) !== ? ~(result >> 1) : (result >> 1));
+    let dlat = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
     lat += dlat;
 
     shift = 0;
@@ -24,7 +23,7 @@ function decodePolyline(encoded: string): RouteCoordinate[] {
       result |= (b & 0x1f) << shift;
       shift += 5;
     } while (b >= 0x20);
-    let dlng = ((result & 1) !== ? ~(result >> 1) : (result >> 1));
+    let dlng = ((result & 1) !== 0 ? ~(result >> 1) : (result >> 1));
     lng += dlng;
 
     points.push({ lat: lat / 1e5, lng: lng / 1e5 });
@@ -57,16 +56,15 @@ export async function calculateRouteFromDestinations(destinations: Destination[]
 
   try {
     const coordinatesQuery = sortedDestinations.map(d => `${d.lng},${d.lat}`).join(";");
-    
     const url = `https://router.project-osrm.org/route/v1/driving/${coordinatesQuery}?overview=full&geometries=polyline`;
-    
+
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Routing service request failed with status: ${response.status}`);
     }
 
     const data = await response.json();
-    
+
     if (!data.routes || data.routes.length === 0) {
       throw new Error("No route found between the provided destinations.");
     }
