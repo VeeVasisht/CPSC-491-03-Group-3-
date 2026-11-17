@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { validateRouteDestinations } from "~/models/route";
-import { calculateRouteFromDestinations } from "~/services/routingService";
+import { validateRouteDestinations } from "../models/route";
+import { calculateRouteFromDestinations } from "./routingService";
 
 describe("Sprint 4: Route Visualization & Boundary Tests", () => {
   beforeEach(() => {
