@@ -22,8 +22,20 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate Build Version
+        run: |
+          BUILD_NUM="${{ github.run_number }}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          BUILD_VERSION="v0.2.${BUILD_NUM}-${SHORT_SHA}"
+          echo "BUILD_VERSION=${BUILD_VERSION}" >> "$GITHUB_ENV"
+          echo "::notice title=Production Build Version::Building version ${BUILD_VERSION}"
+
       - name: Build application
         run: npm run build
+        env:
+          VITE_APP_VERSION: ${{ env.BUILD_VERSION}}
+          
       - name: Deploy to Firebase Hosting
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:

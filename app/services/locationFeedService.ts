@@ -1,5 +1,3 @@
-// app/services/locationFeedService.ts
-
 import { collection, getDocsFromServer, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import {
@@ -8,19 +6,18 @@ import {
   type LocationFeedPost,
 } from "../models/locationFeed";
 import { validateGeotag, normalizeGeotag } from "../models/geotag";
+import { getCachedLocationFeed, setCachedLocationFeed } from "./locationFeedCache";
 
-/**
- * Retrieves geotagged posts from the server and applies location and proximity filters.
- */
 export async function getLocationFeed(
   filter: LocationFeedFilter,
 ): Promise<LocationFeedPost[]> {
-  try {
-    const postsRef = collection(db, "posts");
-    const q = query(postsRef, where("location", "!=", null));
-    const snapshot = await getDocsFromServer(q);
+  const postsRef = collection(db, "posts");
+  const q = query(postsRef, where("location", "!=", null));
 
-    const rawPosts: LocationFeedPost[] = [];
+  let rawPosts: LocationFeedPost[] = [];
+
+  try {
+    const snapshot = await getDocsFromServer(q);
 
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
@@ -50,9 +47,19 @@ export async function getLocationFeed(
     }
 
     const filtered = filterPostsByLocation(rawPosts, filter);
-    return filtered.sort((a, b) => b.createdAt - a.createdAt);
+    const sorted = filtered.sort((a, b) => b.createdAt - a.createdAt);
+
+    setCachedLocationFeed(filter, sorted);
+    return sorted;
+
   } catch (error) {
-    console.error("Error fetching location feed:", error);
-    throw new Error("Unable to load location-based feed.");
+    console.warn("Network fetch failed or device is offline. Attempting cache fallback...", error);
+
+    const cachedPosts = getCachedLocationFeed(filter);
+    if (cachedPosts) {
+      return cachedPosts;
+    }
+
+    throw new Error("Unable to load location-based feed and no cached data is available.");
   }
 }
