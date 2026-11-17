@@ -1,5 +1,5 @@
-import type { Destination, RouteResult, RouteSegment, RouteCoordinate } from "~/models/route";
-import { validateRouteDestinations } from "~/models/route";
+import type { Destination, RouteResult, RouteSegment, RouteCoordinate } from "../models/route";
+import { validateRouteDestinations } from "../models/route";
 
 function decodePolyline(encoded: string): RouteCoordinate[] {
   let points: RouteCoordinate[] = [];
