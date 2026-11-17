@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router";
 
 import { createPost } from "../firebase/posts";
 
@@ -80,6 +81,13 @@ export default function CreatePost() {
   return (
     <main className="create-post-page">
       <section className="create-post-card">
+        <Link
+          to="/"
+          className="mb-4 inline-block rounded-md border border-[#0d3b66] px-4 py-2 font-medium text-[#0d3b66] no-underline transition-colors hover:bg-[#0d3b66] hover:text-white"
+        >
+          ← Back to Home
+        </Link>
+
         <h1>Create a Post</h1>
 
         <form

@@ -45,23 +45,10 @@ export function MainNav() {
         </Link>
 
         <div className="flex items-center gap-4">
-          <Link
-            to="/feed"
-            className="text-sm font-medium hover:underline"
-          >
-            Feed
-          </Link>
 
-          <Link
-            to="/itineraries"
-            className="text-sm font-medium hover:underline"
-          >
-            Itineraries
-          </Link>
-
-          {user?.email && (
+          {user?.displayName && (
             <span className="hidden sm:inline text-sm text-gray-600 dark:text-gray-300">
-              {user.email}
+              {user.displayName}
             </span>
           )}
 
